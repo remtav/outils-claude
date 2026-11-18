@@ -1,0 +1,10 @@
+{
+  "name": "vagues",
+  "description": "Mécanique des vagues pour Claude Code : issues taillées 1-2-4, vagues orchestrées par sous-agents (implementeur, reviseur), journal, planification, release ; garde-fous et contrôle de fin en hooks. Les données propres à chaque projet (journal, budget, commandes de vérification) restent dans le projet.",
+  "author": {
+    "name": "remtav"
+  },
+  "homepage": "https://github.com/remtav/outils-claude",
+  "repository": "https://github.com/remtav/outils-claude",
+  "keywords": ["vagues", "orchestration", "sous-agents", "hooks"]
+}

@@ -1,0 +1,59 @@
+{
+  "description": "Garde-fous des agents de vague (implementeur, reviseur), garde de fusion et contrôle de fin de l'implémenteur. Python 3 requis. Les réglages (commande de vérification, HOOKS_QUALITE_DESACTIVES) sont lus dans le projet, jamais dans le plugin.",
+  "hooks": {
+    "PreToolUse": [
+      {
+        "matcher": "Bash|Write|Edit|MultiEdit|NotebookEdit|mcp__github__merge_pull_request|mcp__github__enable_pr_auto_merge|mcp__github__pull_request_review_write|mcp__github__push_files|mcp__github__create_or_update_file|mcp__github__delete_file",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "python3 \"${CLAUDE_PLUGIN_ROOT}/hooks/garde-agents-vague.py\""
+          }
+        ]
+      },
+      {
+        "matcher": "Bash|mcp__github__merge_pull_request|mcp__github__enable_pr_auto_merge",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "python3 \"${CLAUDE_PLUGIN_ROOT}/hooks/garde-fusion.py\"",
+            "timeout": 120
+          }
+        ]
+      },
+      {
+        "matcher": "SubagentHandback",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "python3 \"${CLAUDE_PLUGIN_ROOT}/hooks/implementeur-stop-check.py\" handback",
+            "timeout": 600
+          }
+        ]
+      }
+    ],
+    "SubagentStart": [
+      {
+        "matcher": "^(vagues:)?implementeur$",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "python3 \"${CLAUDE_PLUGIN_ROOT}/hooks/implementeur-stop-check.py\" start"
+          }
+        ]
+      }
+    ],
+    "SubagentStop": [
+      {
+        "matcher": "^(vagues:)?implementeur$",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "python3 \"${CLAUDE_PLUGIN_ROOT}/hooks/implementeur-stop-check.py\"",
+            "timeout": 600
+          }
+        ]
+      }
+    ]
+  }
+}
