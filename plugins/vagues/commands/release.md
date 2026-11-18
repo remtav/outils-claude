@@ -4,22 +4,22 @@ argument-hint: <tag> <N…> [depuis=<commit|tag|AAAA-MM-JJ>]
 model: fable
 ---
 
-Tu es l'**orchestrateur de release** pour : `$ARGUMENTS`. Tu gardes l'**audit** et les **décisions** (nettoyage sûr ou refactorisation lourde, tag ou pas). Les tâches mécaniques (tests, notes, tag) vont au sous-agent `release-mecanique` (Sonnet), qui répond en une ligne. Tu ne lis pas les diffs des PR de nettoyage : le réviseur s'en charge.
+Tu es l'**orchestrateur de release** pour : `$ARGUMENTS`. Tu gardes l'**audit** et les **décisions** (nettoyage sûr ou refactorisation lourde, tag ou pas). Les tâches mécaniques (tests, notes, tag) vont au sous-agent `release-mecanique` du plugin (Sonnet), qui répond en une ligne. Tu ne lis pas les diffs des PR de nettoyage : le réviseur s'en charge.
 
 Accès GitHub : outils MCP GitHub (`mcp__github__*`) ; `gh` en alternative s'il est disponible. Le dépôt (`owner/repo`) se lit dans `git remote get-url origin`.
 
 ## Convention de release
 
-- **Une release = une liste de vagues**, données en argument par leurs numéros (étiquettes `vague-N` existantes, posées par `/vague`). Pas d'étiquette `release-x` ni de jalon : la liste vit dans l'argument et dans les notes de version.
+- **Une release = une liste de vagues**, données en argument par leurs numéros (étiquettes `vague-N` existantes, posées par `/vagues:vague`). Pas d'étiquette `release-x` ni de jalon : la liste vit dans l'argument et dans les notes de version.
 - **Tag** : `vX.Y` (ex. `v0.3`), annoté, sur le commit de `main` testé. Il marque la fin de la release ; les notes de version sont son message (et la release GitHub, si `gh` est disponible).
 - **Notes** : PR fusionnées dans `main` depuis le **tag précédent**. **Première release (aucun tag)** : depuis le début du dépôt, ou depuis `depuis=<commit|tag|AAAA-MM-JJ>` si donné en argument.
 - **Consolidation** : les refactorisations lourdes repérées deviennent des issues étiquetées `consolidation`, `vague-<P>` et `taille-1|2|4`, où **P = le plus grand numéro de vague de la release + 1** : la première vague de la release suivante est leur vague de consolidation.
 
 ## 0. Arguments
 
-- Premier mot : le tag. Il doit avoir la forme `vX.Y` ou `vX.Y.Z`. Sinon, réponds `Usage : /release <tag> <N…> [depuis=<commit|tag|AAAA-MM-JJ>]` et arrête-toi.
+- Premier mot : le tag. Il doit avoir la forme `vX.Y` ou `vX.Y.Z`. Sinon, réponds `Usage : /vagues:release <tag> <N…> [depuis=<commit|tag|AAAA-MM-JJ>]` et arrête-toi.
 - Mots suivants : les numéros de vague (`3` ou `vague-3`), au moins un ; `depuis=…` en option.
-- **Idempotence** : si le tag existe déjà (`git fetch --tags origin`, puis `git tag --list <tag>`), réponds `Release <tag> déjà taguée` et arrête-toi. Relancer `/release` sur une release interrompue reprend sinon à l'étape 1 : les étapes déjà faites se retrouvent dans l'état GitHub (PR de nettoyage, issues `consolidation`).
+- **Idempotence** : si le tag existe déjà (`git fetch --tags origin`, puis `git tag --list <tag>`), réponds `Release <tag> déjà taguée` et arrête-toi. Relancer `/vagues:release` sur une release interrompue reprend sinon à l'étape 1 : les étapes déjà faites se retrouvent dans l'état GitHub (PR de nettoyage, issues `consolidation`).
 
 ## 1. Les vagues sont-elles fusionnées ?
 
@@ -34,7 +34,7 @@ Ouvertes : #<issue> (vague-N) — PR #<pr> ou « sans PR », …
 
 ## 2. Suite de tests complète
 
-Lance `release-mecanique` (outil Agent, `subagent_type: "release-mecanique"`) avec le message, et rien d'autre :
+Lance `release-mecanique` (outil Agent, `subagent_type: "vagues:release-mecanique"`) avec le message, et rien d'autre :
 
 ```
 Tâche tests. Réponds au format de ta définition.
@@ -49,7 +49,7 @@ Sur `main` à jour, lis le code ajouté ou modifié par la release (`git diff --
 - code mort, fichiers ou fonctions plus appelés ;
 - duplications ;
 - conventions non uniformes (noms, structure, style, langue des messages) ;
-- dépendances inutilisées (`package.json` contre les imports) ;
+- dépendances inutilisées (manifeste de dépendances du projet, ex. `package.json` ou `requirements.txt`, contre les imports) ;
 - ce qui nuira à la mise à l'échelle (couplages, chemins codés en dur, absence de tests).
 
 Classe chaque constat :
@@ -61,10 +61,10 @@ Classe chaque constat :
 
 S'il y a au moins un constat sûr (et pas déjà une PR de nettoyage ouverte pour ce tag, à reprendre sinon) :
 
-1. Crée **une** issue au format du modèle `.github/ISSUE_TEMPLATE/tache.md`, titre `Nettoyage de la release <tag>` : contexte, fichiers touchés, la liste exacte des nettoyages (fichier, quoi), critères (« `npm test` passe », un critère par nettoyage), taille, dépendances « aucune ». Étiquette `taille-N`, **pas** d'étiquette `vague-N`.
-2. Lance `implementeur` (`subagent_type: "implementeur"`) avec seulement : `Issue #<numéro>. Réponds en une seule ligne au format de ta définition.`
-3. Applique à sa PR **la même règle que `/vague`** (étape 3 de `.claude/commands/vague.md`) : CI lue sur le dernier commit, puis un **nouveau** `reviseur` (`subagent_type: "reviseur"`) avec seulement `PR #<pr>, issue #<issue>. Réponds en une seule ligne au format de ta définition.`, puis fusion (`merge_method: "merge"`, `expectedHeadSha`) **seulement si CI réussie ET réviseur `approuvé` pour le même dernier commit**. CI absente, échouée ou en attente, ou refus : la PR reste ouverte.
-4. **PR non fusionnée → pas de tag.** Arrête-toi après l'étape 5 (les issues de consolidation peuvent être créées), résumé final avec la raison. Seule exception : la PR est **fermée sans fusion** (abandon explicite, décidé par Rémi en fermant la PR). Le tag se fait alors sans elle, et les notes le disent (« Nettoyage abandonné : PR #<pr> »).
+1. Crée **une** issue au format du modèle `.github/ISSUE_TEMPLATE/tache.md`, titre `Nettoyage de la release <tag>` : contexte, fichiers touchés, la liste exacte des nettoyages (fichier, quoi), critères (« la suite de tests complète du projet passe », un critère par nettoyage), taille, dépendances « aucune ». Étiquette `taille-N`, **pas** d'étiquette `vague-N`.
+2. Lance `implementeur` (`subagent_type: "vagues:implementeur"`) avec seulement : `Issue #<numéro>. Réponds en une seule ligne au format de ta définition.`
+3. Applique à sa PR **la même règle que `/vagues:vague`** (étape 3 de `${CLAUDE_PLUGIN_ROOT}/commands/vague.md`) : CI lue sur le dernier commit, puis un **nouveau** `reviseur` (`subagent_type: "vagues:reviseur"`) avec seulement `PR #<pr>, issue #<issue>. Réponds en une seule ligne au format de ta définition.`, puis fusion (`merge_method: "merge"`, `expectedHeadSha`) **seulement si CI réussie ET réviseur `approuvé` pour le même dernier commit**. CI absente, échouée ou en attente, ou refus : la PR reste ouverte.
+4. **PR non fusionnée → pas de tag.** Arrête-toi après l'étape 5 (les issues de consolidation peuvent être créées), résumé final avec la raison. Seule exception : la PR est **fermée sans fusion** (abandon explicite, décidé par l'utilisateur en fermant la PR). Le tag se fait alors sans elle, et les notes le disent (« Nettoyage abandonné : PR #<pr> »).
 5. Après une fusion, `main` a changé : relance l'étape 2 (tests) avant de taguer.
 
 Aucun constat sûr : pas de PR, dis-le dans le résumé.

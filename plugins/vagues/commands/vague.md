@@ -1,5 +1,5 @@
 ---
-description: Orchestre une vague d'issues (étiquette vague-N) avec les sous-agents implementeur et reviseur ; fusionne seulement si la CI a réussi et que le réviseur approuve. Argument : un numéro de vague (3 ou vague-3) ou « reprise ».
+description: Orchestre une vague d'issues (étiquette vague-N) avec les sous-agents vagues:implementeur et vagues:reviseur ; fusionne seulement si la CI a réussi et que le réviseur approuve. Argument : un numéro de vague (3 ou vague-3) ou « reprise ».
 argument-hint: <N | vague-N | reprise>
 ---
 
@@ -14,7 +14,7 @@ Accès GitHub : outils MCP GitHub (`mcp__github__*`) ; `gh` en alternative s'il 
   - **Fichier absent ou aucune vague non fermée : réponds exactement `Rien à reprendre` et arrête-toi**, sans aucun autre appel (ni GitHub, ni sous-agent, ni écriture).
   - **Vague encore active** : si la dernière ligne de cette vague (tous événements confondus) date de **moins de 90 minutes** (`date -u`), une autre session y travaille probablement : réponds `Vague N en cours (dernière ligne <heure>) : rien à reprendre` et arrête-toi, sans aucun autre appel.
   - Sinon, lis-y le numéro de vague `N` et continue avec `vague-N` : l'étape 1 la marque `coupée` puis `reprise`.
-- Autre chose ou rien → réponds `Usage : /vague <N | vague-N | reprise>` et arrête-toi.
+- Autre chose ou rien → réponds `Usage : /vagues:vague <N | vague-N | reprise>` et arrête-toi.
 
 ## 1. État de la vague (idempotence)
 
@@ -26,7 +26,7 @@ Liste les issues étiquetées `vague-N` (`mcp__github__list_issues` avec `labels
 | PR ouverte liée (corps contenant `Closes #<issue>`, `Fixes #<issue>` ou `Resolves #<issue>`, le numéro suivi d'une **limite de mot** : `Closes #6` ne désigne pas l'issue 69 ; motif : `(?i)\b(close[sd]?\|fix(e[sd])?\|resolve[sd]?) #<issue>\b`) | passer directement à l'étape 3 (CI + révision) |
 | aucune PR | étape 2 (implémentation) |
 
-Relancer `/vague N` sur une vague partiellement faite reprend donc là où elle en était, sans refaire les issues terminées.
+Relancer `/vagues:vague N` sur une vague partiellement faite reprend donc là où elle en était, sans refaire les issues terminées.
 
 Lis aussi la taille de chaque issue dans ses étiquettes `taille-1`, `taille-2`, `taille-4` (1, 2 ou 4 points ; sans étiquette : 0, et le signaler) : **points prévus** = somme sur toutes les issues de la vague.
 
@@ -34,11 +34,11 @@ Lis enfin le **budget** dans les réglages du journal (ligne `budget:`, seul end
 
 **Journal** (voir « Écrire une ligne au journal » plus bas) :
 1. Pour chaque vague **non fermée** du journal (définition à l'étape 0), y compris `N`, dont la dernière ligne d'état n'est pas déjà `coupée` : écris `coupée | complétés C/P`, avec `P` et `C` calculés pour cette vague-là comme ici et à l'étape 5 (issues de son étiquette `vague-M`).
-2. Puis, pour `N` : `reprise | prévus P` si `N` était non fermée (cas de `/vague reprise`, ou d'un `/vague N` relancé sur une vague coupée), sinon `ouverte | prévus P`.
+2. Puis, pour `N` : `reprise | prévus P` si `N` était non fermée (cas de `/vagues:vague reprise`, ou d'un `/vagues:vague N` relancé sur une vague coupée), sinon `ouverte | prévus P`.
 
 ## 2. Implémentation
 
-Pour chaque issue à implémenter, lance un sous-agent `implementeur` (outil Agent, `subagent_type: "implementeur"`) avec ce message, **et rien d'autre** :
+Pour chaque issue à implémenter, lance un sous-agent `implementeur` du plugin (outil Agent, `subagent_type: "vagues:implementeur"`) avec ce message, **et rien d'autre** :
 
 ```
 Issue #<numéro>. Réponds en une seule ligne au format de ta définition.
@@ -58,7 +58,7 @@ Pour chaque PR (nouvelle ou déjà ouverte) :
    - **réussie** : toutes les vérifications terminées et vertes ;
    - **échouée** : au moins une rouge ou annulée → la PR reste ouverte ;
    - **absente** : aucune vérification configurée pour cette PR (cas fréquent : le workflow ne se déclenche que sur certains chemins). Note-le. **Règle par défaut : une PR à CI absente n'est pas fusionnée**, même si l'implémenteur rapporte ses tests locaux réussis ; elle reste ouverte avec la raison « CI absente ». Cette commande ne contient aucune règle qui autorise la fusion sans CI.
-2. **Révision.** Lance un sous-agent `reviseur` (`subagent_type: "reviseur"`), **nouveau pour chaque PR**, avec ce message et rien d'autre (ni résumé de l'implémentation, ni ton avis) :
+2. **Révision.** Lance un sous-agent `reviseur` du plugin (`subagent_type: "vagues:reviseur"`), **nouveau pour chaque PR**, avec ce message et rien d'autre (ni résumé de l'implémentation, ni ton avis) :
 
    ```
    PR #<pr>, issue #<issue>. Réponds en une seule ligne au format de ta définition.
@@ -66,9 +66,9 @@ Pour chaque PR (nouvelle ou déjà ouverte) :
 
    Garde seulement sa ligne (`PR #<n> | approuvé` ou `PR #<n> | refusé | <raison>`).
 3. **Fusion — seulement si les deux conditions tiennent pour le même dernier commit : CI réussie ET réviseur `approuvé`.** Vérifie juste avant que le SHA de tête n'a pas changé depuis la révision (sinon, nouvelle révision). Fusionne alors (`mcp__github__merge_pull_request` avec `merge_method: "merge"` et `expectedHeadSha`, ou `gh pr merge <n> --merge`). Dans tous les autres cas, **ne fusionne pas** : la PR reste ouverte, avec sa raison (CI échouée, CI absente, CI en attente, refusée par le réviseur).
-4. **Garde de fusion.** Le hook `.claude/hooks/garde-fusion.py` revérifie au moment de la fusion : CI réussie sur le SHA de tête **et** commentaire du réviseur avec le marqueur `<!-- verdict-reviseur: approuvé sha=<sha de tête> -->`. S'il refuse la fusion (outil bloqué avec un message « Bloqué par le garde de fusion »), **ne réessaie pas** et ne contourne pas (autre outil, `gh api`, autre méthode de fusion) : la PR reste ouverte, avec la raison `refusée par le garde de fusion : <raison>`.
+4. **Garde de fusion.** Le hook `garde-fusion.py` du plugin revérifie au moment de la fusion : CI réussie sur le SHA de tête **et** commentaire du réviseur avec le marqueur `<!-- verdict-reviseur: approuvé sha=<sha de tête> -->`. S'il refuse la fusion (outil bloqué avec un message « Bloqué par le garde de fusion »), **ne réessaie pas** et ne contourne pas (autre outil, `gh api`, autre méthode de fusion) : la PR reste ouverte, avec la raison `refusée par le garde de fusion : <raison>`.
 
-Seule cette session principale fusionne : les gardes de `.claude/hooks/agent-guard.py` bloquent la fusion et l'approbation pour `implementeur` et `reviseur`.
+Seule cette session principale fusionne : le garde `garde-agents-vague.py` du plugin bloque la fusion et l'approbation pour `implementeur` et `reviseur`.
 
 **Journal** : après chaque fusion, écris aussitôt `issue #I | taille T | fusionnée | PR #n`. Une PR laissée ouverte est notée à l'étape 5 seulement (l'étape 4 peut encore la faire fusionner).
 
@@ -93,11 +93,11 @@ Ajoute au résumé, s'il y a lieu : `Prévus P > budget B`, et `Journal non écr
 1. pour chaque PR de la vague restée ouverte : `issue #I | taille T | ouverte | PR #n | <raison>` (CI échouée, CI absente, CI en attente, refusée par le réviseur, refusée par le garde de fusion, conflit après fusion) ;
 2. puis la ligne de fermeture : `fermée | complétés C/P | utilisation: __ %`. Laisse `__` tel quel : l'utilisateur y note le pourcentage d'utilisation affiché dans l'app Claude. Termine le résumé par `Journal : note l'utilisation dans .claude/journal-vagues.md (facultatif).`
 
-Si la session s'arrête avant cette étape (limite atteinte, session fermée), rien n'est écrit : la vague reste non fermée, et le prochain `/vague reprise` (ou `/vague N`) la marque `coupée`.
+Si la session s'arrête avant cette étape (limite atteinte, session fermée), rien n'est écrit : la vague reste non fermée, et le prochain `/vagues:vague reprise` (ou `/vagues:vague N`) la marque `coupée`.
 
 ## Écrire une ligne au journal
 
-Le journal (`.claude/journal-vagues.md`) est commité **directement sur `main`**, ligne par ligne, par cette session principale seulement (jamais par un sous-agent : `agent-guard.py` bloque d'ailleurs les écritures sur `main` pour `implementeur` et `reviseur`). Ainsi, une session neuve (par ex. la reprise planifiée décrite dans `CLAUDE.md`) voit l'état à jour. Le fichier est sous `.claude/`, hors des chemins du workflow de CI : ces commits ne déclenchent aucune CI. Pas de PR pour le journal.
+Le journal (`.claude/journal-vagues.md`) est commité **directement sur `main`**, ligne par ligne, par cette session principale seulement (jamais par un sous-agent : `garde-agents-vague.py` bloque d'ailleurs les écritures sur `main` pour `implementeur` et `reviseur`). Ainsi, une session neuve (par ex. la reprise planifiée décrite dans le README du plugin et le `CLAUDE.md` du projet) voit l'état à jour. Le fichier est sous `.claude/`, en principe hors des chemins de la CI du projet (à vérifier pour chaque projet) : ces commits ne devraient déclencher aucune CI. Pas de PR pour le journal.
 
 Ligne : `- <heure> | vague N | <événement…>` (format exact : section « Format » du journal), heure en UTC donnée par `date -u +%Y-%m-%dT%H:%MZ`. Ajoute-la **à la fin** du fichier, sans toucher aux autres lignes.
 

@@ -4,12 +4,12 @@ argument-hint: "[nombre de vagues] [lecture-seule]"
 model: claude-fable-5-2
 ---
 
-Tu es le **planificateur** des vagues de ce dépôt. Arguments : `$ARGUMENTS`.
+Tu es le **planificateur** des vagues du projet courant (plugin vagues). Arguments : `$ARGUMENTS`.
 
 - Un entier `K` → forme `K` vagues (par défaut **2**).
 - `lecture-seule` → calcule et affiche tout, mais **n'écris rien** : ni étiquette, ni issue, ni commentaire, ni modification du journal. Le résumé dit alors « lecture seule : rien n'a été écrit ».
 
-Règles de planification : section « Planification » de `CLAUDE.md` (tailles, budget, fichiers, dépendances). Format du journal : section « Format » de `.claude/journal-vagues.md`. Accès GitHub : outils MCP GitHub (`mcp__github__*`), `gh` en alternative ; `owner/repo` d'après `git remote get-url origin`.
+Règles de planification : section « Règles de planification » (ou « Planification ») du `CLAUDE.md` du projet (tailles, budget, fichiers, dépendances). Format du journal : section « Format » de `.claude/journal-vagues.md`. Accès GitHub : outils MCP GitHub (`mcp__github__*`), `gh` en alternative ; `owner/repo` d'après `git remote get-url origin`.
 
 Tu ne codes pas, tu ne fusionnes rien, tu ne lances aucune vague.
 
@@ -50,7 +50,7 @@ Pour chaque issue ouverte dont la dernière ligne `issue` est `bloquée`, ou `ou
 2. **Trop grosse ou trop floue** (plusieurs livrables, critères non vérifiables, taille effective > 4) → **redécoupe** :
    - crée de nouvelles issues avec le modèle `.github/ISSUE_TEMPLATE/tache.md` (sections Contexte, Fichiers probablement touchés, Critères d'acceptation, Taille, Dépendances), chacune de taille 1 ou 2, le contexte commençant par `Découpée de #<originale>.` ;
    - étiquette chacune `taille-1` ou `taille-2` ;
-   - sur l'originale : un commentaire qui liste les nouvelles issues, et retire son étiquette `vague-*` (elle ne doit plus être reprise par `/vague`). Ne la ferme pas : l'utilisateur la fermera.
+   - sur l'originale : un commentaire qui liste les nouvelles issues, et retire son étiquette `vague-*` (elle ne doit plus être reprise par `/vagues:vague`). Ne la ferme pas : l'utilisateur la fermera.
 3. **Bloquée pour une raison extérieure** (accès manquant, décision attendue de l'utilisateur) → ne la replanifie pas ; signale-la dans le résumé avec la raison.
 4. Sinon (échec ponctuel) → elle redevient candidate à l'étape 5, sans changement.
 
@@ -71,7 +71,7 @@ Pour chaque issue ouverte dont la dernière ligne `issue` est `bloquée`, ou `ou
 
 ## 6. Noter les réglages
 
-Remplace dans les **réglages** du journal les lignes `budget:` et `estimations:` par les nouvelles valeurs (ne touche à aucune ligne d'événement). Le budget n'est noté **que là** : ne l'écris nulle part ailleurs. Commite directement sur `main`, comme décrit dans « Écrire une ligne au journal » de `.claude/commands/vague.md` (MCP de préférence, sinon git par un worktree temporaire), avec le message `journal: planification (budget B)`. Si l'écriture sur `main` est refusée, donne les deux lignes dans le résumé pour que l'utilisateur les reporte.
+Remplace dans les **réglages** du journal les lignes `budget:` et `estimations:` par les nouvelles valeurs (ne touche à aucune ligne d'événement). Le budget n'est noté **que là** : ne l'écris nulle part ailleurs. Commite directement sur `main`, comme décrit dans « Écrire une ligne au journal » de la commande vague du plugin (`${CLAUDE_PLUGIN_ROOT}/commands/vague.md` ; MCP de préférence, sinon git par un worktree temporaire), avec le message `journal: planification (budget B)`. Si l'écriture sur `main` est refusée, donne les deux lignes dans le résumé pour que l'utilisateur les reporte.
 
 ## 7. Résumé (court)
 
