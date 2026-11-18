@@ -1,6 +1,6 @@
 """Instantané de l'arbre de travail pour implementeur-stop-check.py.
 
-Copie de gab_state.py (remtav/template), sans ce qui est propre à l'agent gab.
+Copie de gab_state.py (remtav/template), sans ses règles propres à ce dépôt-là.
 Le hook SubagentStart enregistre un instantané au départ de l'implémenteur ; le
 contrôle de fin compare l'arbre avec lui, pour ne pas compter les modifications
 qui existaient déjà. État rangé dans le dossier temporaire, par clé (agent_id).

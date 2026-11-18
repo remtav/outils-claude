@@ -117,7 +117,7 @@ def test_command():
     except OSError:
         pass
     raise Stop(f"aucune commande de tests configurée : écris-la sur la première ligne de {TEST_CONFIG} "
-               "dans le projet (ou lance /installer-vagues), ou définis RELEASE_TEST_CMD")
+               "dans le projet (ou lance /vagues:installer-vagues), ou définis RELEASE_TEST_CMD")
 
 
 def run_tests():

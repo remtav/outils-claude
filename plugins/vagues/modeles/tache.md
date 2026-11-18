@@ -1,6 +1,6 @@
 ---
 name: Tâche
-about: Une unité de travail implémentable seule, prête pour une vague (/vague)
+about: Une unité de travail implémentable seule, prête pour une vague (/vagues:vague)
 labels: []
 ---
 

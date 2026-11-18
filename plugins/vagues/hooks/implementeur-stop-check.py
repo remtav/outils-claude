@@ -79,7 +79,7 @@ def probleme_verif(project_dir):
     cmd = commande_verif(project_dir)
     if not cmd:
         return (f"aucune commande de vérification configurée : écris-la sur la première ligne de {CONFIG} "
-                "dans le projet (ou lance /installer-vagues), ou définis VERIFICATION_IMPLEMENTEUR.")
+                "dans le projet (ou lance /vagues:installer-vagues), ou définis VERIFICATION_IMPLEMENTEUR.")
     try:
         proc = subprocess.run(cmd, shell=True, cwd=project_dir, capture_output=True, text=True, timeout=TIMEOUT)
     except subprocess.TimeoutExpired:
