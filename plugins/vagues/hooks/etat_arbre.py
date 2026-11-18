@@ -1,8 +1,9 @@
-"""Working-tree snapshot for gab-stop-check.py.
+"""Instantané de l'arbre de travail pour implementeur-stop-check.py.
 
-The SubagentStart hook saves a snapshot when gab starts; the SubagentStop hook
-compares the tree with it, so changes that existed before gab started are not
-counted as gab's. Snapshots are keyed by the subagent's agent_id.
+Copie de gab_state.py (remtav/template), sans ce qui est propre à l'agent gab.
+Le hook SubagentStart enregistre un instantané au départ de l'implémenteur ; le
+contrôle de fin compare l'arbre avec lui, pour ne pas compter les modifications
+qui existaient déjà. État rangé dans le dossier temporaire, par clé (agent_id).
 """
 import hashlib
 import json
@@ -10,17 +11,14 @@ import os
 import subprocess
 import tempfile
 
-ALLOWED_DIRS = ("research", "data")
-
-
 def state_path(key):
-    directory = os.path.join(tempfile.gettempdir(), "gab-hooks")
+    directory = os.path.join(tempfile.gettempdir(), "vagues-hooks")
     os.makedirs(directory, exist_ok=True)
     return os.path.join(directory, f"{key or 'default'}.json")
 
 
 def tree(project_dir):
-    """Map each changed or untracked path to a hash of its content."""
+    """Chemin modifié ou non suivi → empreinte de son contenu (« deleted » si supprimé)."""
     out = subprocess.run(
         ["git", "status", "--porcelain=v1", "-z", "-uall"],
         cwd=project_dir, capture_output=True, check=True,
@@ -33,7 +31,7 @@ def tree(project_dir):
         if len(entry) < 4:
             continue
         paths.append(entry[3:])
-        if entry[0] in "RC":  # renames and copies carry the source path next
+        if entry[0] in "RC":  # renommage ou copie : le chemin source suit
             paths.append(entries[i])
             i += 1
     result = {}
@@ -48,12 +46,8 @@ def tree(project_dir):
 
 
 def changed(before, after):
-    """Paths whose state differs between two trees (absent means clean)."""
+    """Chemins dont l'état diffère entre deux arbres (absent = propre)."""
     return sorted(p for p in set(before) | set(after) if before.get(p) != after.get(p))
-
-
-def is_allowed(path):
-    return any(path == d or path.startswith(d + "/") for d in ALLOWED_DIRS)
 
 
 def load(key):

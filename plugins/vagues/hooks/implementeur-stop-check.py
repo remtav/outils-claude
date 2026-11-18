@@ -1,15 +1,16 @@
 #!/usr/bin/env python3
-"""Contrôle de fin de l'agent implementeur (hooks dans .claude/settings.json).
+"""Contrôle de fin de l'agent implementeur (hooks/hooks.json du plugin vagues).
 
-Sur le modèle de gab-stop-check.py :
+Repris de remtav/template (#73), rendu générique (#72) :
 - `start` (SubagentStart) : instantané de l'arbre de travail au départ.
 - `handback` (PreToolUse sur SubagentHandback) : bloque la remise (sortie 2,
   raison sur stderr) tant qu'un contrôle échoue.
 - sans argument (SubagentStop) : même contrôle ; décision JSON « block ».
 Contrôles :
-- la commande de vérification réussit (variable VERIFICATION_IMPLEMENTEUR, sinon
-  première ligne utile de .claude/verification-implementeur, sinon
-  `npm run lint && npm run test:node`) ;
+- la commande de vérification du projet réussit : variable VERIFICATION_IMPLEMENTEUR,
+  sinon première ligne utile (non vide, sans « # ») de .claude/verification-implementeur
+  dans le projet ($CLAUDE_PROJECT_DIR). Aucune commande par défaut : sans réglage,
+  le contrôle bloque et dit où le configurer (échec fermé ; /installer-vagues crée le fichier) ;
 - aucune modification non commitée depuis le départ (fichiers déjà modifiés au
   départ exclus) ;
 - branche courante ni main/master ni tête détachée, et poussée sur origin.
@@ -25,13 +26,12 @@ import sys
 
 sys.dont_write_bytecode = True  # pas de __pycache__ dans le dépôt
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
-import etat_arbre as gab_state  # noqa: E402  (copie de gab_state.py de remtav/template)
+import etat_arbre  # noqa: E402  (instantané d'arbre et état, à côté de ce script)
 
 NOM = "implementeur-stop-check"
 AGENTS = ("implementeur", "vagues:implementeur")
 MAX_BLOCKS = 3
 PROTECTED = ("main", "master")
-DEFAULT_VERIF = "npm run lint && npm run test:node"
 CONFIG = os.path.join(".claude", "verification-implementeur")
 TIMEOUT = 540
 MAX_SORTIE = 30
@@ -52,7 +52,7 @@ def commande_verif(project_dir):
                     return line.strip()
     except OSError:
         pass
-    return DEFAULT_VERIF
+    return None
 
 
 def git(project_dir, *args):
@@ -61,8 +61,8 @@ def git(project_dir, *args):
 
 def problemes_git(state, project_dir):
     problems = []
-    after = gab_state.tree(project_dir)
-    dirty = [p for p in gab_state.changed(state["tree"], after) if p in after]
+    after = etat_arbre.tree(project_dir)
+    dirty = [p for p in etat_arbre.changed(state["tree"], after) if p in after]
     if dirty:
         problems.append("modifications non commitées (commite-les ou annule-les) : " + ", ".join(dirty))
     branch = git(project_dir, "symbolic-ref", "--quiet", "--short", "HEAD").stdout.strip()
@@ -77,6 +77,9 @@ def problemes_git(state, project_dir):
 
 def probleme_verif(project_dir):
     cmd = commande_verif(project_dir)
+    if not cmd:
+        return (f"aucune commande de vérification configurée : écris-la sur la première ligne de {CONFIG} "
+                "dans le projet (ou lance /installer-vagues), ou définis VERIFICATION_IMPLEMENTEUR.")
     try:
         proc = subprocess.run(cmd, shell=True, cwd=project_dir, capture_output=True, text=True, timeout=TIMEOUT)
     except subprocess.TimeoutExpired:
@@ -96,10 +99,10 @@ def main():
     project_dir = os.path.realpath(os.environ.get("CLAUDE_PROJECT_DIR") or event.get("cwd") or os.getcwd())
 
     if mode == "start":
-        gab_state.save(key, {"tree": gab_state.tree(project_dir), "blocks": 0})
+        etat_arbre.save(key, {"tree": etat_arbre.tree(project_dir), "blocks": 0})
         return 0
 
-    state = gab_state.load(key)
+    state = etat_arbre.load(key)
     if state is None:  # pas d'instantané (hook ajouté en cours de route, ou déjà terminé)
         return 0
 
@@ -110,7 +113,7 @@ def main():
 
     if problems and state["blocks"] < MAX_BLOCKS:
         state["blocks"] += 1
-        gab_state.save(key, state)
+        etat_arbre.save(key, state)
         reason = (f"Contrôle de fin de l'implémenteur (blocage {state['blocks']}/{MAX_BLOCKS}) : "
                   "corrige avant de terminer :\n- " + "\n- ".join(problems))
         if mode == "handback":
@@ -119,7 +122,7 @@ def main():
         print(json.dumps({"decision": "block", "reason": reason}))
         return 0
 
-    gab_state.clear(key)
+    etat_arbre.clear(key)
     if problems:
         print("Contrôle de fin de l'implémenteur : toujours en échec après 3 tentatives. Ne réponds pas `réussi` : "
               "réponds `partiel` ou `bloqué`, avec la raison :\n- " + "\n- ".join(problems), file=sys.stderr)

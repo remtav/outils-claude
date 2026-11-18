@@ -1,4 +1,4 @@
-"""Tests de .claude/hooks/garde-fusion.py par entrées JSON factices.
+"""Tests de plugins/vagues/hooks/garde-fusion.py par entrées JSON factices.
 
 Lancer : python3 -m unittest discover -s tests/hooks -v
 Aucun appel réseau : un faux `gh` (placé en tête du PATH) répond à partir d'un

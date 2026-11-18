@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Garde de fusion (PreToolUse, tous les agents et la session principale).
+"""Garde de fusion (PreToolUse, tous les agents et la session principale ; hooks/hooks.json du plugin vagues).
 
 Avant une fusion de PR, quel que soit le chemin :
 - outils MCP `mcp__github__merge_pull_request` et `mcp__github__enable_pr_auto_merge` ;

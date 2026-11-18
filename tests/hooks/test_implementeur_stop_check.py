@@ -1,4 +1,4 @@
-"""Tests de .claude/hooks/implementeur-stop-check.py par entrées JSON factices.
+"""Tests de plugins/vagues/hooks/implementeur-stop-check.py par entrées JSON factices.
 
 Lancer : python3 -m unittest discover -s tests/hooks -v
 Chaque test travaille dans un dépôt git jetable avec un « origin » nu local, et
@@ -209,10 +209,19 @@ class Configuration(Base):
         self.write_config("exit 3\n")
         self.assert_passes("handback", verif="true")
 
-    def test_defaut_npm(self):
+    def test_sans_commande_configuree_bloque(self):
+        # Plus de commande par défaut propre à un projet (npm) : sans réglage dans le projet,
+        # le contrôle bloque et dit où configurer la commande (échec fermé).
         code, _, err = self.run_hook("handback", verif=None)
         self.assertEqual(code, 2)
-        self.assertIn("npm run lint && npm run test:node", err)
+        self.assertIn(".claude/verification-implementeur", err)
+        self.assertNotIn("npm", err)
+
+    def test_fichier_sans_ligne_utile_bloque(self):
+        self.write_config("# seulement un commentaire\n\n")
+        code, _, err = self.run_hook("handback", verif=None)
+        self.assertEqual(code, 2)
+        self.assertIn(".claude/verification-implementeur", err)
 
     def test_desactivation(self):
         for value in ("implementeur-stop-check", "tous"):
