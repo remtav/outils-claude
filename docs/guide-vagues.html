@@ -210,7 +210,8 @@ PR #81 | refusé | <i>raison principale</i></code></pre>
 <ol class="etapes">
   <li><b>1. Copier le bloc de <code>.claude/settings.json</code> du README</b>
     Il déclare le marketplace <code>outils-claude</code> (avec <code>autoUpdate: true</code>, nécessaire pour recevoir les modifications du plugin) et active <code>vagues@outils-claude</code>. Le créer s’il n’existe pas ; sinon, <strong>fusionner</strong> ses clés avec celles du fichier. Le bloc est dans le <a href="../README.md#installer-dans-un-projet">README</a>.
-   Ouvrir une nouvelle session, puis lancer <code>/vagues:installer-vagues</code></b>
+  </li>
+  <li><b>2. Ouvrir une nouvelle session, puis lancer <code>/vagues:installer-vagues</code></b>
     Accepter le marketplace et le plugin si Claude Code le demande. La commande crée le modèle d’issue, le journal, la section « Règles de planification » de <code>CLAUDE.md</code>, les commandes de vérification et les étiquettes <code>taille-*</code>. Elle n’écrase rien et peut être relancée. Pour imposer la commande de vérification rapide : <code>/vagues:installer-vagues "&lt;commande&gt;"</code>.
   </li>
   <li><b>3. Relire et commiter, puis <code>/vagues:planifier</code> et <code>/vagues:vague 1</code></b>
