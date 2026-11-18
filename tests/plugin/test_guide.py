@@ -76,6 +76,11 @@ class Guide(unittest.TestCase):
         self.assertNotIn("@import", self.texte)
         self.assertNotIn("url(", self.texte)
 
+    def test_guide_decrit_preparer_puis_vague(self):
+        self.assertIn("/vagues:preparer-issue", self.texte)
+        for mot in ("Opus", "Sonnet", "<code>prête</code>", "<code>à-préciser</code>"):
+            self.assertIn(mot, self.texte)
+
     def test_commandes_et_agents_existent(self):
         commandes = {f[:-3] for f in os.listdir(os.path.join(PLUGIN, "commands")) if f.endswith(".md")}
         agents = {f[:-3] for f in os.listdir(os.path.join(PLUGIN, "agents")) if f.endswith(".md")}

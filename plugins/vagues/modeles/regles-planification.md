@@ -2,6 +2,7 @@
 
 Mécanique des vagues fournie par le plugin `vagues` (marketplace `outils-claude`). Le travail est découpé en **issues** (une unité implémentable seule, modèle [`tache.md`](.github/ISSUE_TEMPLATE/tache.md)), regroupées en **vagues** (étiquette `vague-N`, lancées par `/vagues:vague N`), puis en **releases** (`/vagues:release`).
 
+- **Préparation** : une issue est **préparée** par `/vagues:preparer-issue` (Opus : plan d'implémentation, tests, commandes de vérification, pièges), puis implémentée par `/vagues:vague` (Sonnet). Étiquette `prête` = toutes les sections du modèle remplies, aucune question ouverte ; `à-préciser` = une décision manque (voir « Questions ouvertes »). `/vagues:vague` ne lance pas l'implémenteur sur une issue sans `prête`.
 - **Tailles** : petite = 1, moyenne = 2, grosse = 4 points, posées en étiquette `taille-1`, `taille-2` ou `taille-4`. Au-delà de 4, scinder l'issue.
 - **Budget par vague** : 10 points au départ, ajusté par `/vagues:planifier`. La valeur courante est notée à **un seul endroit** : la ligne `budget:` des réglages de [`.claude/journal-vagues.md`](.claude/journal-vagues.md). La somme des tailles d'une vague ne dépasse pas le budget (une issue seule plus grosse forme sa propre vague).
 - **Estimations calibrées** : ligne `estimations:` des réglages du même journal (ajustements par type d'issue, tenus par `/vagues:planifier`).
@@ -13,4 +14,4 @@ Mécanique des vagues fournie par le plugin `vagues` (marketplace `outils-claude
 - rapide, avant qu'un implémenteur termine : `{{VERIFICATION}}` — fichier [`.claude/verification-implementeur`](.claude/verification-implementeur) (la variable `VERIFICATION_IMPLEMENTEUR` la remplace) ;
 - suite complète, avant un tag de release : `{{TESTS_COMPLETS}}` — fichier [`.claude/tests-complets`](.claude/tests-complets) (la variable `RELEASE_TEST_CMD` la remplace).
 
-Commandes : `/vagues:planifier [K] [lecture-seule]`, `/vagues:vague <N | reprise>`, `/vagues:release <tag> <N…>`. Le journal est commité directement sur `main` par la session qui lance `/vagues:vague` ou `/vagues:planifier`, sans PR.
+Commandes : `/vagues:preparer-issue <idée | #N> [brouillon]`, `/vagues:planifier [K] [lecture-seule]`, `/vagues:vague <N | reprise>`, `/vagues:release <tag> <N…>`. Le journal est commité directement sur `main` par la session qui lance `/vagues:vague` ou `/vagues:planifier`, sans PR.

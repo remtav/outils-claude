@@ -81,15 +81,22 @@ footer{padding-top:16px;padding-bottom:32px;color:var(--discret);font-size:.9rem
 <p>Le travail suit un chemin : des <strong>issues</strong> sont regroupées en <strong>vagues</strong>, et quelques vagues forment une <strong>release</strong>. Les commandes du plugin portent le préfixe <code>vagues:</code> ; c’est la seule forme documentée (<code>/vagues:vague</code>, pas <code>/vague</code>).</p>
 
 <ol class="etapes">
-  <li><b>1. <code>/vagues:planifier</code> : former les vagues</b>
+  <li><b>1. <code>/vagues:preparer-issue</code> : préparer les issues (Opus)</b>
+    Le modèle fort (Opus) lit le code et écrit l’issue pour que le modèle plus petit (Sonnet) l’implémente sans rien deviner : plan d’implémentation, tests à écrire d’abord, commandes de vérification, pièges, exemples à imiter. On donne une idée en texte libre ou <code>#N</code> pour enrichir une issue existante ; <code>brouillon</code> affiche sans rien écrire.
+    <pre><code>/vagues:preparer-issue "ajouter une option --sec au script de release"
+/vagues:preparer-issue #12
+/vagues:preparer-issue brouillon "idée à explorer"</code></pre>
+    <em>Ce qu’on obtient :</em> une issue étiquetée <code>taille-N</code> et <code>prête</code>, ou <code>à-préciser</code> si une décision manque (la question est écrite dans « Questions ouvertes » : on y répond, puis on relance <code>/vagues:preparer-issue #N</code>). Au-delà de 4 points, l’idée est scindée en plusieurs issues liées. La commande ne pose jamais <code>vague-N</code>. <strong>Les issues déjà ouvertes n’ont pas <code>prête</code> : c’est voulu</strong>, elles passent d’abord par <code>/vagues:preparer-issue #N</code>.
+  </li>
+  <li><b>2. <code>/vagues:planifier</code> : former les vagues</b>
     Lit le journal, ajuste le budget de points, redécoupe les issues bloquées, pose les étiquettes <code>vague-N</code> et <code>taille-*</code>.
     <pre><code>/vagues:planifier
 /vagues:planifier 3
 /vagues:planifier lecture-seule</code></pre>
     <em>Ce qu’on obtient :</em> un résumé court (budget ancien → nouveau, contenu de chaque vague en points, issues redécoupées, issues en attente). Deux vagues par défaut ; un nombre en argument en forme davantage. Avec <code>lecture-seule</code>, tout est calculé et affiché, mais rien n’est écrit.
   </li>
-  <li><b>2. <code>/vagues:vague N</code> : lancer une vague</b>
-    Un sous-agent implémente chaque issue (trois en parallèle au plus), un autre révise chaque PR, puis la session principale fusionne ce qui est vert et approuvé.
+  <li><b>3. <code>/vagues:vague N</code> : lancer une vague</b>
+    Un sous-agent (Sonnet) implémente chaque issue <code>prête</code> (trois en parallèle au plus ; une issue sans <code>prête</code> est notée « bloquée : non préparée » et aucun sous-agent n’est lancé pour elle), un autre révise chaque PR, puis la session principale fusionne ce qui est vert et approuvé.
     <pre><code>/vagues:vague 3</code></pre>
     <em>Ce qu’on obtient :</em> un résumé final.
     <pre><code>Vague 3 — 8/10 points
@@ -97,18 +104,19 @@ Fusionnées : #81 (issue #70), …
 Ouvertes : #82 — CI absente, …
 Bloquées : #71 — dépend de #70, …</code></pre>
   </li>
-  <li><b>3. <code>/vagues:vague reprise</code> : reprendre une vague coupée</b>
+  <li><b>4. <code>/vagues:vague reprise</code> : reprendre une vague coupée</b>
     Pour une vague interrompue (limite d’utilisation atteinte, session fermée).
     <pre><code>/vagues:vague reprise</code></pre>
     <em>Ce qu’on obtient :</em> soit <code>Rien à reprendre</code> (aucune vague non fermée : aucun appel GitHub, aucun sous-agent, presque aucun coût), soit la reprise là où la vague en était, l’état de chaque issue étant relu sur GitHub. Si la vague a écrit une ligne au journal il y a moins de 90 minutes, la commande s’arrête : une autre session y travaille sans doute.
   </li>
-  <li><b>4. <code>/vagues:release</code> : clore une release</b>
+  <li><b>5. <code>/vagues:release</code> : clore une release</b>
     On donne le tag puis les numéros de vague. Tests complets, audit, une PR de nettoyage pour les retouches sûres, des issues pour les refactorisations lourdes, notes de version et tag.
     <pre><code>/vagues:release v0.3 3 4
 /vagues:release v0.1 1 2 depuis=2026-10-01</code></pre>
     <em>Ce qu’on obtient :</em> un tag annoté <code>vX.Y</code> sur le commit testé, mais <strong>seulement si tout est vert</strong>. Une vague qui a encore une issue ou une PR ouverte, des tests en échec ou une PR de nettoyage non fusionnée arrêtent la release sans tag. Relancer la commande reprend où elle s’était arrêtée ; un tag déjà créé donne <code>Release &lt;tag&gt; déjà taguée</code>.
   </li>
 </ol>
+<p>En deux mots : <strong>préparer (Opus) → vague (Sonnet)</strong>. La réflexion se fait une fois, dans l’issue ; l’implémentation suit le plan écrit.</p>
 <p>Pour les détails de chaque commande, voir « Commandes » dans le <a href="../README.md#commandes">README</a>.</p>
 </section>
 
@@ -117,12 +125,16 @@ Bloquées : #71 — dépend de #70, …</code></pre>
 <p>L’<strong>orchestrateur</strong> est la session principale : il coordonne et ne code pas. Les sous-agents travaillent dans leur coin et ne lui rendent qu’<strong>une ligne</strong>, ce qui garde son contexte léger.</p>
 
 <div class="carte">
+  <h3><code>/vagues:preparer-issue</code></h3>
+  <p><span class="modele">Opus</span> Écrit ou enrichit les issues (voir l’étape 1 du cycle). N’implémente rien, ne crée ni branche ni PR.</p>
+</div>
+<div class="carte">
   <h3>Orchestrateur (session principale)</h3>
   <p><span class="modele">modèle de ta session</span> Exécute <code>/vagues:vague</code> : lance les sous-agents, lit la CI, fusionne, écrit le journal. C’est le seul à fusionner. <code>/vagues:planifier</code> demande le modèle <code>claude-fable-5-2</code> ; <code>/vagues:release</code>, le modèle <code>fable</code>.</p>
 </div>
 <div class="carte">
   <h3><code>vagues:implementeur</code></h3>
-  <p><span class="modele">Sonnet</span> Reçoit un numéro d’issue : branche, code, tests, push, PR. Ne fusionne ni n’approuve.</p>
+  <p><span class="modele">Sonnet</span> Reçoit un numéro d’issue : branche, code, tests, push, PR. Suit le plan d’implémentation de l’issue ; si une étape est impossible ou ambiguë, il répond <code>bloqué</code> sans deviner. Ne fusionne ni n’approuve.</p>
   <pre><code>#69 → https://github.com/<i>o</i>/<i>r</i>/pull/80 | réussi
 #70 → — | bloqué | dépend de #69, non fusionnée</code></pre>
 </div>
@@ -144,6 +156,7 @@ PR #81 | refusé | <i>raison principale</i></code></pre>
 <ul>
   <li><strong>Tailles 1, 2, 4</strong> : petite = 1 point, moyenne = 2, grosse = 4, posées en étiquettes <code>taille-1</code>, <code>taille-2</code>, <code>taille-4</code>. Au-delà de 4, on scinde l’issue.</li>
   <li><strong>Budget par vague</strong> : 10 points au départ ; <code>/vagues:planifier</code> l’ajuste (entre 4 et 20) selon les vagues coupées et l’utilisation. La somme des tailles d’une vague ne dépasse pas le budget ; une issue seule plus grosse forme sa propre vague.</li>
+  <li><strong>Issue préparée</strong> : <code>prête</code> = toutes les sections du modèle remplies et aucune question ouverte ; <code>à-préciser</code> = une décision manque. <code>/vagues:vague</code> ne lance l’implémenteur que sur une issue <code>prête</code>.</li>
   <li><strong>Fichiers distincts</strong> : deux issues d’une même vague ne touchent pas les mêmes fichiers (section « Fichiers probablement touchés » du modèle d’issue).</li>
   <li><strong>Dépendances</strong> : une issue qui dépend d’une autre va dans une vague suivante.</li>
 </ul>
@@ -194,7 +207,7 @@ PR #81 | refusé | <i>raison principale</i></code></pre>
 
 <h3>Autres étapes</h3>
 <ul>
-  <li><strong>Étiquettes</strong> : <code>/vagues:installer-vagues</code> crée <code>taille-1</code>, <code>taille-2</code> et <code>taille-4</code> si elle a accès à GitHub ; sinon elle les liste « à créer ». Les étiquettes <code>vague-N</code> sont posées par <code>/vagues:planifier</code>.</li>
+  <li><strong>Étiquettes</strong> : <code>/vagues:installer-vagues</code> crée <code>taille-1</code>, <code>taille-2</code> et <code>taille-4</code> si elle a accès à GitHub ; sinon elle les liste « à créer ». Elle crée aussi <code>prête</code> et <code>à-préciser</code> (posées par <code>/vagues:preparer-issue</code>). Les étiquettes <code>vague-N</code> sont posées par <code>/vagues:planifier</code>.</li>
   <li><strong>Accès réseau à GitHub</strong> dans l’environnement cloud : sans lui, le marketplace ne se charge pas.</li>
   <li><strong>Après l’ajout du plugin</strong> : <code>/reload-skills</code>, ou une nouvelle session.</li>
   <li><strong>Protection de <code>main</code></strong> : le plugin n’en suppose aucune ; le garde de fusion en tient lieu. Si ton projet en a une, c’est à toi de la régler.</li>

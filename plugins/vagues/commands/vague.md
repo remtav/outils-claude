@@ -23,8 +23,11 @@ Liste les issues étiquetées `vague-N` (`mcp__github__list_issues` avec `labels
 | État GitHub | Étape |
 |---|---|
 | issue fermée, ou PR liée fusionnée | **terminée** : sauter |
+| issue ouverte, sans PR, **sans** l'étiquette `prête` | **bloquée, non préparée** : ne pas l'implémenter, aucun sous-agent (voir ci-dessous) |
 | PR ouverte liée (corps contenant `Closes #<issue>`, `Fixes #<issue>` ou `Resolves #<issue>`, le numéro suivi d'une **limite de mot** : `Closes #6` ne désigne pas l'issue 69 ; motif : `(?i)\b(close[sd]?\|fix(e[sd])?\|resolve[sd]?) #<issue>\b`) | passer directement à l'étape 3 (CI + révision) |
 | aucune PR | étape 2 (implémentation) |
+
+**Garde « prête ».** Une issue ouverte de la vague **sans** l'étiquette `prête` n'est jamais confiée à l'implémenteur (une issue qui a déjà une PR ouverte suit sa ligne du tableau). Elle est **bloquée** avec la raison `non préparée (lancer /vagues:preparer-issue #N)` : écris-la au journal (ligne `issue #I | taille T | bloquée | — | non préparée (lancer /vagues:preparer-issue #I)`) et mets-la dans « Bloquées » du résumé. **Aucun sous-agent n'est lancé pour elle.** Les issues déjà ouvertes avant l'introduction de `/vagues:preparer-issue` n'ont pas `prête` : c'est voulu, elles passent d'abord par `/vagues:preparer-issue #N`. Une issue `à-préciser` est dans le même cas (ses « Questions ouvertes » attendent une décision).
 
 Relancer `/vagues:vague N` sur une vague partiellement faite reprend donc là où elle en était, sans refaire les issues terminées.
 
@@ -38,7 +41,7 @@ Lis enfin le **budget** dans les réglages du journal (ligne `budget:`, seul end
 
 ## 2. Implémentation
 
-Pour chaque issue à implémenter, lance un sous-agent `implementeur` du plugin (outil Agent, `subagent_type: "vagues:implementeur"`) avec ce message, **et rien d'autre** :
+Pour chaque issue à implémenter (étiquette `prête`, sans PR), lance un sous-agent `implementeur` du plugin (outil Agent, `subagent_type: "vagues:implementeur"`) avec ce message, **et rien d'autre** :
 
 ```
 Issue #<numéro>. Réponds en une seule ligne au format de ta définition.

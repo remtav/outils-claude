@@ -48,8 +48,8 @@ Pour chaque issue ouverte dont la dernière ligne `issue` est `bloquée`, ou `ou
 
 1. Lis l'issue, ses commentaires et, s'il y en a une, la raison donnée sur sa PR (ligne du réviseur ou de l'implementeur), **sans lire le diff**.
 2. **Trop grosse ou trop floue** (plusieurs livrables, critères non vérifiables, taille effective > 4) → **redécoupe** :
-   - crée de nouvelles issues avec le modèle `.github/ISSUE_TEMPLATE/tache.md` (sections Contexte, Fichiers probablement touchés, Critères d'acceptation, Taille, Dépendances), chacune de taille 1 ou 2, le contexte commençant par `Découpée de #<originale>.` ;
-   - étiquette chacune `taille-1` ou `taille-2` ;
+   - crée de nouvelles issues avec le modèle enrichi `.github/ISSUE_TEMPLATE/tache.md` (sections Contexte, Fichiers probablement touchés, Critères d'acceptation, Taille, Dépendances, Plan d'implémentation, Tests à écrire d'abord, Commandes de vérification, Hors portée et pièges, Exemples à imiter, Questions ouvertes ; voir `${CLAUDE_PLUGIN_ROOT}/modeles/tache.md`), chacune de taille 1 ou 2, le contexte commençant par `Découpée de #<originale>.` ; remplis **toutes** les sections avec des chemins qui existent (lis le code au besoin) ;
+   - étiquette chacune `taille-1` ou `taille-2`, plus `prête` si toutes les sections sont remplies et les « Questions ouvertes » vides, sinon `à-préciser` (crée ces étiquettes si elles manquent ; l'issue sera ensuite complétée par `/vagues:preparer-issue #N`) ;
    - sur l'originale : un commentaire qui liste les nouvelles issues, et retire son étiquette `vague-*` (elle ne doit plus être reprise par `/vagues:vague`). Ne la ferme pas : l'utilisateur la fermera.
 3. **Bloquée pour une raison extérieure** (accès manquant, décision attendue de l'utilisateur) → ne la replanifie pas ; signale-la dans le résumé avec la raison.
 4. Sinon (échec ponctuel) → elle redevient candidate à l'étape 5, sans changement.
@@ -59,6 +59,7 @@ Pour chaque issue ouverte dont la dernière ligne `issue` est `bloquée`, ou `ou
 **Candidates** : issues ouvertes sans étiquette `vague-*` (dont les nouvelles issues de l'étape 4 et celles remises à l'étape 4.4, à qui tu retires leur ancienne étiquette `vague-*`), sauf les issues bloquées pour une raison extérieure et les issues de suivi qui ne sont pas des tâches implémentables (ex. plans de travail).
 
 1. **Taille** : lis l'étiquette `taille-*`. Si elle manque, estime-la (section « Taille » de l'issue, sinon ampleur des critères et des fichiers) et pose l'étiquette `taille-1`, `taille-2` ou `taille-4`. Au-delà de 4 : redécoupe comme à l'étape 4.2.
+   Une candidate sans l'étiquette `prête` reste candidate, mais signale-la dans « En attente » (`à préparer : /vagues:preparer-issue #N`) : `/vagues:vague` ne la lancera pas tant qu'elle n'est pas prête.
 2. **Fichiers** : lis la section « Fichiers probablement touchés » de chaque issue. Section absente : considère que l'issue touche tous les fichiers de son sujet et place-la seule si le doute subsiste ; signale-le.
 3. **Dépendances** : section « Dépendances » et mentions « Dépend de #n ». Une issue dont une dépendance est encore ouverte ne va **pas** dans la même vague que cette dépendance, mais dans une vague **suivante** ; si la dépendance n'est dans aucune vague formée ici, l'issue attend (signale-la).
 4. **Remplissage** : numéros de vague à partir de `M + 1`, où `M` est le plus grand `N` vu dans les étiquettes `vague-N` du dépôt et dans le journal. Pour chaque vague, dans l'ordre : prends les candidates par ordre de numéro d'issue (les plus anciennes d'abord, les issues découpées juste après leur originale), et ajoute une issue seulement si :

@@ -110,7 +110,7 @@ class Composants(unittest.TestCase):
 
     def test_commandes_ont_une_description(self):
         names = [os.path.basename(p)[:-3] for p in plugin_files("commands/*.md")]
-        self.assertEqual(sorted(names), ["installer-vagues", "planifier", "release", "vague"])
+        self.assertEqual(sorted(names), ["installer-vagues", "planifier", "preparer-issue", "release", "vague"])
         for path in plugin_files("commands/*.md"):
             self.assertRegex(frontmatter(path), r"(?m)^description: \S", path)
 
@@ -135,6 +135,56 @@ class Composants(unittest.TestCase):
                       "regles-planification.md"):
             self.assertIn(f"`{model}`" if model != "regles-planification.md" else model, text)
             self.assertTrue(os.path.isfile(os.path.join(PLUGIN, "modeles", model)), model)
+
+
+class PreparerIssue(unittest.TestCase):
+    """Étape « préparer (Opus) → vague (Sonnet) » : commande, modèle d'issue enrichi, garde-fou de /vague."""
+
+    SECTIONS = ["Plan d'implémentation", "Tests à écrire d'abord", "Commandes de vérification",
+                "Hors portée et pièges", "Exemples à imiter", "Questions ouvertes"]
+
+    def test_commande_sur_opus(self):
+        path = os.path.join(PLUGIN, "commands", "preparer-issue.md")
+        self.assertTrue(os.path.isfile(path))
+        self.assertRegex(frontmatter(path), r"(?m)^model: opus$")
+
+    def test_modele_a_les_six_sections_dans_l_ordre(self):
+        text = read(os.path.join(PLUGIN, "modeles", "tache.md"))
+        titres = re.findall(r"(?m)^## (.+)$", text)
+        self.assertEqual(titres, ["Contexte", "Fichiers probablement touchés", "Critères d'acceptation",
+                                  "Taille", "Dépendances"] + self.SECTIONS)
+
+    def test_chaque_nouvelle_section_a_un_commentaire(self):
+        text = read(os.path.join(PLUGIN, "modeles", "tache.md"))
+        for section in self.SECTIONS:
+            corps = text.split(f"## {section}\n", 1)[1].split("\n## ", 1)[0]
+            self.assertIn("<!--", corps, section)
+            self.assertIn("implémenteur", corps, section)
+
+    def test_vague_saute_les_issues_sans_etiquette_prete(self):
+        text = read(os.path.join(PLUGIN, "commands", "vague.md"))
+        self.assertIn("`prête`", text)
+        self.assertIn("non préparée (lancer /vagues:preparer-issue #", text)
+
+    def test_planifier_et_release_utilisent_le_modele_enrichi(self):
+        for name in ("planifier", "release"):
+            text = read(os.path.join(PLUGIN, "commands", f"{name}.md"))
+            for section in self.SECTIONS:
+                self.assertIn(section, text, name)
+            self.assertIn("`prête`", text, name)
+            self.assertIn("`à-préciser`", text, name)
+
+    def test_preparer_issue_ne_pose_pas_vague_n(self):
+        text = read(os.path.join(PLUGIN, "commands", "preparer-issue.md"))
+        for mot in ("`prête`", "`à-préciser`", "brouillon", "#N", "Demande d'origine"):
+            self.assertIn(mot, text)
+        self.assertRegex(text, r"[Jj]amais .*`vague-N`")
+
+    def test_implementeur_suit_le_plan(self):
+        text = read(os.path.join(PLUGIN, "agents", "implementeur.md"))
+        self.assertIn("Plan d'implémentation", text)
+        self.assertIn("Commandes de vérification", text)
+        self.assertRegex(frontmatter(os.path.join(PLUGIN, "agents", "implementeur.md")), r"(?m)^model: sonnet$")
 
 
 class AucuneDonneeDeProjet(unittest.TestCase):

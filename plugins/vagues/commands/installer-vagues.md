@@ -1,5 +1,5 @@
 ---
-description: Prépare le projet courant pour la mécanique des vagues (plugin vagues) - modèle d'issue, journal, règles de planification dans CLAUDE.md, commandes de vérification, étiquettes taille-*. Idempotent - n'écrase jamais un fichier existant. Argument facultatif - la commande de vérification rapide.
+description: Prépare le projet courant pour la mécanique des vagues (plugin vagues) - modèle d'issue, journal, règles de planification dans CLAUDE.md, commandes de vérification, étiquettes taille-*, prête et à-préciser. Idempotent - n'écrase jamais un fichier existant. Argument facultatif - la commande de vérification rapide.
 argument-hint: "[commande de vérification]"
 ---
 
@@ -39,7 +39,7 @@ Pour chacun : s'il existe, « déjà en place » ; sinon, lis le modèle (`${CLA
 
 ## 4. Étiquettes
 
-Crée les étiquettes `taille-1`, `taille-2` et `taille-4` si elles n'existent pas (dépôt `owner/repo` d'après `git remote get-url origin`) : outils MCP GitHub s'il y en a un pour les étiquettes, sinon `gh label create taille-1 --description "1 point" --force` (de même pour 2 et 4) si `gh` est disponible et authentifié. Si aucun accès ne le permet, ne bloque pas : liste-les « à créer » dans le résumé. Les étiquettes `vague-N` sont créées plus tard par `/vagues:planifier`.
+Crée les étiquettes `taille-1`, `taille-2`, `taille-4`, `prête` (issue préparée par `/vagues:preparer-issue`, lancée par `/vagues:vague`) et `à-préciser` (issue qui attend une décision) si elles n'existent pas (dépôt `owner/repo` d'après `git remote get-url origin`) : outils MCP GitHub s'il y en a un pour les étiquettes, sinon `gh label create taille-1 --description "1 point" --force` (de même pour 2 et 4 ; `prête` : `--description "Issue préparée, prête pour une vague"`, `à-préciser` : `--description "Décision manquante, voir Questions ouvertes"`) si `gh` est disponible et authentifié. Si aucun accès ne le permet, ne bloque pas : liste-les « à créer » dans le résumé. Dis aussi que les issues déjà ouvertes n'ont pas `prête` : elles passent par `/vagues:preparer-issue #N` avant `/vagues:vague`. Les étiquettes `vague-N` sont créées plus tard par `/vagues:planifier`.
 
 ## 5. Résumé (court)
 
@@ -49,8 +49,8 @@ Créés : <fichiers>
 Déjà en place : <fichiers>
 CLAUDE.md : section ajoutée|créé|déjà en place
 Vérification : <commande rapide> ; suite complète : <commande>
-Étiquettes : créées|déjà là|à créer : taille-1, taille-2, taille-4
-Prochaine étape : relire et commiter ces fichiers, puis /vagues:planifier, puis /vagues:vague 1
+Étiquettes : créées|déjà là|à créer : taille-1, taille-2, taille-4, prête, à-préciser
+Prochaine étape : relire et commiter ces fichiers, puis /vagues:preparer-issue #N (issues existantes), /vagues:planifier, puis /vagues:vague 1
 ```
 
 Ajoute une ligne `À vérifier :` si une commande a été devinée ou vaut `true`.
