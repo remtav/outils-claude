@@ -175,8 +175,6 @@ PR #81 | refusé | <i>raison principale</i></code></pre>
 <ul>
   <li>Dans une session cloud : variable d’environnement de l’environnement.</li>
   <li><code>garde-agents-vague.py</code> ne se désactive pas.</li>
-  <li>Un agent ne peut pas changer la variable pour lui-même en cours de session.</li>
-  <li>Un hook de lint propre au projet (comme <code>lint-fichier.py</code> dans <code>remtav/template</code>) peut avoir son propre nom dans la variable, selon le projet.</li>
 </ul>
 <p>Voir « Hooks » dans le <a href="../README.md#hooks">README</a>.</p>
 </section>
@@ -203,43 +201,23 @@ PR #81 | refusé | <i>raison principale</i></code></pre>
 </ul>
 
 <h3>Installation du plugin en session cloud</h3>
-<div class="attention">En session cloud, Claude Code n’installe pas tout seul le marketplace et le plugin déclarés dans <code>.claude/settings.json</code> (il n’y a pas d’invite de confiance dans ces sessions). Ce qui fonctionne : installer à la main, ou mettre ces commandes dans le <strong>script d’installation de l’environnement</strong>.</div>
-<pre><code>claude plugin marketplace add remtav/outils-claude
-claude plugin install vagues@outils-claude --scope project
-git checkout -- .claude/settings.json</code></pre>
-<p>Le <code>git checkout</code> remet <code>.claude/settings.json</code> tel quel : l’installation en réordonne le contenu. Pour vérifier, <code>claude plugin list</code> doit montrer <code>vagues@outils-claude</code> à l’état <code>enabled</code>. Par exemple, sur l’environnement de <code>remtav/template</code> :</p>
-<pre><code>if [ -d template ]; then
-  (cd template &amp;&amp; claude plugin marketplace add remtav/outils-claude &amp;&amp; claude plugin install vagues@outils-claude --scope project; git checkout -- .claude/settings.json) || true
-fi</code></pre>
+<div class="attention">En session cloud, Claude Code n’installe pas tout seul le marketplace et le plugin déclarés dans <code>.claude/settings.json</code> (il n’y a pas d’invite de confiance dans ces sessions). Ce qui fonctionne : installer à la main, ou mettre l’installation dans le <strong>script d’installation de l’environnement</strong>. Les commandes exactes sont dans le README, au troisième point connu des sessions cloud. Une fois installé, <code>claude plugin list</code> doit montrer <code>vagues@outils-claude</code> à l’état <code>enabled</code>.</div>
 <p>Voir « Trois points connus des sessions cloud » dans le <a href="../README.md#trois-points-connus-des-sessions-cloud-claude-code-sur-le-web">README</a>.</p>
 </section>
 
 <section id="installer">
 <h2>6. Installer dans un nouveau projet</h2>
 <ol class="etapes">
-  <li><b>1. Copier ce bloc dans <code>.claude/settings.json</code></b>
-    Le créer s’il n’existe pas ; sinon, <strong>fusionner</strong> ces clés avec les siennes.
-    <pre><code>{
-  "extraKnownMarketplaces": {
-    "outils-claude": {
-      "source": { "source": "github", "repo": "remtav/outils-claude" },
-      "autoUpdate": true
-    }
-  },
-  "enabledPlugins": {
-    "vagues@outils-claude": true
-  }
-}</code></pre>
-    <code>autoUpdate: true</code> sert à recevoir les modifications du plugin.
-  </li>
-  <li><b>2. Ouvrir une nouvelle session, puis lancer <code>/vagues:installer-vagues</code></b>
+  <li><b>1. Copier le bloc de <code>.claude/settings.json</code> du README</b>
+    Il déclare le marketplace <code>outils-claude</code> (avec <code>autoUpdate: true</code>, nécessaire pour recevoir les modifications du plugin) et active <code>vagues@outils-claude</code>. Le créer s’il n’existe pas ; sinon, <strong>fusionner</strong> ses clés avec celles du fichier. Le bloc est dans le <a href="../README.md#installer-dans-un-projet">README</a>.
+   Ouvrir une nouvelle session, puis lancer <code>/vagues:installer-vagues</code></b>
     Accepter le marketplace et le plugin si Claude Code le demande. La commande crée le modèle d’issue, le journal, la section « Règles de planification » de <code>CLAUDE.md</code>, les commandes de vérification et les étiquettes <code>taille-*</code>. Elle n’écrase rien et peut être relancée. Pour imposer la commande de vérification rapide : <code>/vagues:installer-vagues "&lt;commande&gt;"</code>.
   </li>
   <li><b>3. Relire et commiter, puis <code>/vagues:planifier</code> et <code>/vagues:vague 1</code></b>
     La commande ne commite rien : tu relis les fichiers créés avant.
   </li>
 </ol>
-<p>En session cloud, ajoute d’abord le script d’installation de la section 5. Détails : « Installer dans un projet » dans le <a href="../README.md#installer-dans-un-projet">README</a>.</p>
+<p>En session cloud, ajoute d’abord l’installation du plugin au script de l’environnement (section 5). Le script d’installation est décrit dans le <a href="../README.md#trois-points-connus-des-sessions-cloud-claude-code-sur-le-web">README</a>.</p>
 </section>
 
 <section id="depannage">
