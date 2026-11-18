@@ -1,11 +1,12 @@
-"""Tests de .claude/scripts/release.py (sous-commandes notes et tag de /release).
+"""Tests de plugins/vagues/scripts/release.py (sous-commandes notes, tests et tag de /release).
 
 Lancer : python3 -m unittest discover -s tests/release -v
 
 Chaque test travaille dans un dépôt git jetable (dossier temporaire) avec un dépôt
 « origin » nu, local : aucun tag n'est jamais créé ni poussé dans le vrai dépôt.
 La commande de tests de la release est remplacée par RELEASE_TEST_CMD
-(« true » = tests réussis, « false » = tests échoués).
+(« true » = tests réussis, « false » = tests échoués), ou lue dans le fichier
+.claude/tests-complets du dépôt jetable (classe CommandeDuProjet).
 """
 import os
 import subprocess
@@ -57,6 +58,8 @@ class DepotJetable(unittest.TestCase):
 
     def run_script(self, *args, test_cmd="true"):
         env = dict(os.environ, RELEASE_TEST_CMD=test_cmd)
+        if test_cmd is None:
+            env.pop("RELEASE_TEST_CMD")
         return subprocess.run([sys.executable, SCRIPT, *args], cwd=self.work,
                               capture_output=True, text=True, env=env)
 
@@ -196,6 +199,60 @@ class Notes(DepotJetable):
         self.assertEqual(proc.returncode, 0, proc.stderr)
         with open(out) as f:
             self.assertIn("Une PR (#1)", f.read())
+
+
+class CommandeDuProjet(DepotJetable):
+    """Commande de tests lue dans le projet (plus de « npm ci && npm test » par défaut)."""
+
+    def write_config(self, content):
+        os.makedirs(os.path.join(self.work, ".claude"), exist_ok=True)
+        with open(os.path.join(self.work, ".claude", "tests-complets"), "w") as f:
+            f.write(content)
+        git(self.work, "add", ".claude")
+        git(self.work, "commit", "-q", "-m", "config")
+        git(self.work, "push", "-q", "origin", "main")
+
+    def test_commande_lue_dans_le_fichier_du_projet(self):
+        marker = os.path.join(self.tmp.name, "tests-lances")
+        self.write_config(f"# commentaire\n\ntouch {marker}\n")
+        proc = self.run_script("tag", "v0.1", "--notes", self.notes_file(), test_cmd=None)
+        self.assertEqual(proc.returncode, 0, proc.stderr)
+        self.assertTrue(os.path.exists(marker))
+        self.assertEqual(self.tags(self.origin), ["v0.1"])
+
+    def test_variable_prioritaire_sur_le_fichier(self):
+        self.write_config("false\n")
+        proc = self.run_script("tag", "v0.1", "--notes", self.notes_file(), test_cmd="true")
+        self.assertEqual(proc.returncode, 0, proc.stderr)
+
+    def test_sans_commande_configuree_aucun_tag(self):
+        proc = self.run_script("tag", "v0.1", "--notes", self.notes_file(), test_cmd=None)
+        self.assertNotEqual(proc.returncode, 0)
+        sortie = proc.stdout + proc.stderr
+        self.assertIn("aucun tag", sortie)
+        self.assertIn(".claude/tests-complets", sortie)
+        self.assertNotIn("npm", sortie)
+        self.assertEqual(self.tags(self.origin), [])
+
+
+class Tests(DepotJetable):
+    """Sous-commande `tests` : lance la suite complète du projet, sans rien créer."""
+
+    def test_reussie(self):
+        proc = self.run_script("tests", test_cmd="true")
+        self.assertEqual(proc.returncode, 0, proc.stderr)
+        self.assertIn("réussi", proc.stdout)
+
+    def test_echouee(self):
+        proc = self.run_script("tests", test_cmd="false")
+        self.assertNotEqual(proc.returncode, 0)
+        self.assertIn("tests échoués", proc.stderr)
+        self.assertEqual(self.tags(), [])
+
+    def test_sans_commande_configuree(self):
+        proc = self.run_script("tests", test_cmd=None)
+        self.assertNotEqual(proc.returncode, 0)
+        self.assertIn(".claude/tests-complets", proc.stderr)
 
 
 if __name__ == "__main__":

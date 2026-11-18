@@ -1,16 +1,23 @@
 #!/usr/bin/env python3
-"""Tâches mécaniques de la commande /release : notes de version et tag.
+"""Tâches mécaniques de la commande /release du plugin vagues : notes, tests et tag.
 
   release.py notes <tag> [--depuis <commit|tag|date>] [--sortie <fichier>]
       Liste les PR fusionnées dans HEAD depuis le tag précédent (ou depuis
       --depuis, ou depuis le début s'il n'y a aucun tag), en Markdown.
 
+  release.py tests
+      Lance la suite de tests complète du projet, sans rien créer.
+
   release.py tag <tag> --notes <fichier>
       Vérifie : nom valide, tag inexistant (local et origin), branche main,
       arbre propre, main à jour avec origin/main, notes non vides. Lance
-      ensuite la suite de tests complète (RELEASE_TEST_CMD, défaut
-      « npm ci && npm test »). Seulement si elle réussit : tag annoté sur HEAD,
-      puis push du tag seul vers origin. Sinon : aucun tag.
+      ensuite la suite de tests complète. Seulement si elle réussit : tag
+      annoté sur HEAD, puis push du tag seul vers origin. Sinon : aucun tag.
+
+Suite de tests complète : variable RELEASE_TEST_CMD, sinon première ligne utile
+(non vide, sans « # ») du fichier .claude/tests-complets du dépôt courant.
+Aucune commande par défaut : sans réglage, arrêt (aucun tag).
+Le script travaille dans le dépôt courant (le projet), jamais dans le plugin.
 
 Code de sortie 0 = réussi ; autre = arrêt, raison sur stderr, aucun tag.
 """
@@ -21,7 +28,7 @@ import subprocess
 import sys
 
 BRANCH = "main"
-DEFAULT_TEST_CMD = "npm ci && npm test"
+TEST_CONFIG = os.path.join(".claude", "tests-complets")
 MERGE_RE = re.compile(r"^Merge pull request #(\d+) from ")
 DATE_RE = re.compile(r"^\d{4}-\d{2}-\d{2}$")
 SQUASH_RE = re.compile(r"\(#(\d+)\)\s*$")
@@ -97,6 +104,36 @@ def cmd_notes(args):
     return 0
 
 
+def test_command():
+    """Commande de la suite complète, lue dans le projet ; Stop si absente."""
+    if os.environ.get("RELEASE_TEST_CMD"):
+        return os.environ["RELEASE_TEST_CMD"]
+    root = git("rev-parse", "--show-toplevel").stdout.strip()
+    try:
+        with open(os.path.join(root, TEST_CONFIG), encoding="utf-8") as f:
+            for line in f:
+                if line.strip() and not line.lstrip().startswith("#"):
+                    return line.strip()
+    except OSError:
+        pass
+    raise Stop(f"aucune commande de tests configurée : écris-la sur la première ligne de {TEST_CONFIG} "
+               "dans le projet (ou lance /installer-vagues), ou définis RELEASE_TEST_CMD")
+
+
+def run_tests():
+    test_cmd = test_command()
+    print(f"Tests : {test_cmd}", flush=True)
+    if subprocess.run(test_cmd, shell=True).returncode != 0:
+        raise Stop(f"tests échoués ({test_cmd})")
+    return test_cmd
+
+
+def cmd_tests(args):
+    test_cmd = run_tests()
+    print(f"Tests réussis : {test_cmd}")
+    return 0
+
+
 def cmd_tag(args):
     tag = args.tag
     if tag.startswith("-") or tag in (BRANCH, "master", "HEAD") or \
@@ -122,10 +159,7 @@ def cmd_tag(args):
     if git("ls-remote", "--tags", "origin", f"refs/tags/{tag}").stdout.strip():
         raise Stop(f"le tag {tag} existe déjà sur origin")
 
-    test_cmd = os.environ.get("RELEASE_TEST_CMD") or DEFAULT_TEST_CMD
-    print(f"Tests : {test_cmd}", flush=True)
-    if subprocess.run(test_cmd, shell=True).returncode != 0:
-        raise Stop(f"tests échoués ({test_cmd})")
+    run_tests()
     if git("status", "--porcelain").stdout.strip():
         raise Stop("les tests ont modifié l'arbre de travail")
 
@@ -145,9 +179,10 @@ def main():
     tag = sub.add_parser("tag")
     tag.add_argument("tag")
     tag.add_argument("--notes", required=True)
+    sub.add_parser("tests")
     args = parser.parse_args()
     try:
-        return cmd_notes(args) if args.cmd == "notes" else cmd_tag(args)
+        return {"notes": cmd_notes, "tests": cmd_tests, "tag": cmd_tag}[args.cmd](args)
     except Stop as e:
         print(f"Arrêt, aucun tag : {e}", file=sys.stderr)
         return 1
