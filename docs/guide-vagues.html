@@ -1,0 +1,275 @@
+<!doctype html>
+<html lang="fr-CA">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="color-scheme" content="light dark">
+<title>Guide du workflow des vagues</title>
+<style>
+:root{
+  --fond:#fbfaf7; --carte:#ffffff; --texte:#1f2328; --discret:#57606a; --bord:#d8d4cb;
+  --accent:#0b5cad; --accent-fond:#e6f0fb; --code-fond:#efece5; --alerte:#8a4b00; --alerte-fond:#fff3dd;
+}
+@media (prefers-color-scheme: dark){
+  :root{
+    --fond:#14171a; --carte:#1c2024; --texte:#e6e8ea; --discret:#a2abb4; --bord:#33393f;
+    --accent:#7db7f0; --accent-fond:#1b2a3a; --code-fond:#262b30; --alerte:#f0b866; --alerte-fond:#33291a;
+  }
+}
+*{box-sizing:border-box}
+html{-webkit-text-size-adjust:100%}
+body{margin:0;background:var(--fond);color:var(--texte);
+  font:16px/1.55 system-ui,-apple-system,"Segoe UI",Roboto,sans-serif;overflow-wrap:break-word}
+main,header,footer{max-width:46rem;margin:0 auto;padding:0 16px}
+header{padding-top:24px}
+h1{font-size:1.65rem;line-height:1.2;margin:0 0 8px}
+h2{font-size:1.25rem;line-height:1.25;margin:2.2rem 0 .6rem;padding-top:.4rem;border-top:2px solid var(--bord)}
+h3{font-size:1.05rem;margin:1.4rem 0 .4rem}
+p,ul,ol{margin:.6rem 0}
+ul,ol{padding-left:1.3rem}
+li{margin:.25rem 0}
+a{color:var(--accent)}
+.lead{color:var(--discret);margin:0 0 16px}
+nav{background:var(--carte);border:1px solid var(--bord);border-radius:8px;padding:10px 14px;margin:12px 0}
+nav ol{margin:.3rem 0;padding-left:1.4rem}
+code{font:.88em/1.4 ui-monospace,SFMono-Regular,Menlo,Consolas,monospace;background:var(--code-fond);
+  padding:.05em .3em;border-radius:4px;overflow-wrap:anywhere}
+pre{background:var(--code-fond);border-radius:8px;padding:10px 12px;margin:.6rem 0;
+  white-space:pre-wrap;overflow-wrap:anywhere;font:.85rem/1.45 ui-monospace,SFMono-Regular,Menlo,Consolas,monospace}
+pre code{background:none;padding:0}
+.etapes{list-style:none;padding:0;margin:.8rem 0}
+.etapes li{background:var(--carte);border:1px solid var(--bord);border-left:4px solid var(--accent);
+  border-radius:8px;padding:10px 12px;margin:.5rem 0}
+.etapes b{display:block;margin-bottom:2px}
+.carte{background:var(--carte);border:1px solid var(--bord);border-radius:8px;padding:10px 14px;margin:.7rem 0}
+.carte h3{margin-top:0}
+.note{background:var(--accent-fond);border-radius:8px;padding:10px 14px;margin:.8rem 0}
+.attention{background:var(--alerte-fond);color:var(--texte);border-left:4px solid var(--alerte);
+  border-radius:8px;padding:10px 14px;margin:.8rem 0}
+.modele{display:inline-block;font-size:.8rem;border:1px solid var(--bord);border-radius:999px;padding:0 .55em;color:var(--discret)}
+table{border-collapse:collapse;width:100%;margin:.6rem 0;font-size:.95rem}
+th,td{border:1px solid var(--bord);padding:6px 8px;text-align:left;vertical-align:top}
+th{background:var(--code-fond)}
+details{background:var(--carte);border:1px solid var(--bord);border-radius:8px;padding:8px 14px;margin:.6rem 0}
+summary{cursor:pointer;font-weight:600}
+footer{padding-top:16px;padding-bottom:32px;color:var(--discret);font-size:.9rem}
+</style>
+</head>
+<body>
+<header>
+  <h1>Guide du workflow des vagues</h1>
+  <p class="lead">Comment passer d’une liste d’issues à une release avec le plugin Claude Code <code>vagues</code> : qui fait quoi, quelles règles, quels garde-fous, ce qui reste à faire à la main.</p>
+  <p>Ce guide explique et oriente. La référence d’installation, des commandes et des hooks reste le <a href="../README.md">README</a> du dépôt.</p>
+  <nav aria-label="Sections">
+    <strong>Sections</strong>
+    <ol>
+      <li><a href="#cycle">Le cycle complet</a></li>
+      <li><a href="#acteurs">Qui fait quoi</a></li>
+      <li><a href="#planification">Règles de planification</a></li>
+      <li><a href="#garde-fous">Garde-fous</a></li>
+      <li><a href="#manuel">Ce qui reste manuel</a></li>
+      <li><a href="#installer">Installer dans un nouveau projet</a></li>
+      <li><a href="#depannage">Dépannage</a></li>
+    </ol>
+  </nav>
+</header>
+
+<main>
+
+<section id="cycle">
+<h2>1. Le cycle complet</h2>
+<p>Le travail suit un chemin : des <strong>issues</strong> sont regroupées en <strong>vagues</strong>, et quelques vagues forment une <strong>release</strong>. Les commandes du plugin portent le préfixe <code>vagues:</code> ; c’est la seule forme documentée (<code>/vagues:vague</code>, pas <code>/vague</code>).</p>
+
+<ol class="etapes">
+  <li><b>1. <code>/vagues:planifier</code> : former les vagues</b>
+    Lit le journal, ajuste le budget de points, redécoupe les issues bloquées, pose les étiquettes <code>vague-N</code> et <code>taille-*</code>.
+    <pre><code>/vagues:planifier
+/vagues:planifier 3
+/vagues:planifier lecture-seule</code></pre>
+    <em>Ce qu’on obtient :</em> un résumé court (budget ancien → nouveau, contenu de chaque vague en points, issues redécoupées, issues en attente). Deux vagues par défaut ; un nombre en argument en forme davantage. Avec <code>lecture-seule</code>, tout est calculé et affiché, mais rien n’est écrit.
+  </li>
+  <li><b>2. <code>/vagues:vague N</code> : lancer une vague</b>
+    Un sous-agent implémente chaque issue (trois en parallèle au plus), un autre révise chaque PR, puis la session principale fusionne ce qui est vert et approuvé.
+    <pre><code>/vagues:vague 3</code></pre>
+    <em>Ce qu’on obtient :</em> un résumé final.
+    <pre><code>Vague 3 — 8/10 points
+Fusionnées : #81 (issue #70), …
+Ouvertes : #82 — CI absente, …
+Bloquées : #71 — dépend de #70, …</code></pre>
+  </li>
+  <li><b>3. <code>/vagues:vague reprise</code> : reprendre une vague coupée</b>
+    Pour une vague interrompue (limite d’utilisation atteinte, session fermée).
+    <pre><code>/vagues:vague reprise</code></pre>
+    <em>Ce qu’on obtient :</em> soit <code>Rien à reprendre</code> (aucune vague non fermée : aucun appel GitHub, aucun sous-agent, presque aucun coût), soit la reprise là où la vague en était, l’état de chaque issue étant relu sur GitHub. Si la vague a écrit une ligne au journal il y a moins de 90 minutes, la commande s’arrête : une autre session y travaille sans doute.
+  </li>
+  <li><b>4. <code>/vagues:release</code> : clore une release</b>
+    On donne le tag puis les numéros de vague. Tests complets, audit, une PR de nettoyage pour les retouches sûres, des issues pour les refactorisations lourdes, notes de version et tag.
+    <pre><code>/vagues:release v0.3 3 4
+/vagues:release v0.1 1 2 depuis=2026-10-01</code></pre>
+    <em>Ce qu’on obtient :</em> un tag annoté <code>vX.Y</code> sur le commit testé, mais <strong>seulement si tout est vert</strong>. Une vague qui a encore une issue ou une PR ouverte, des tests en échec ou une PR de nettoyage non fusionnée arrêtent la release sans tag. Relancer la commande reprend où elle s’était arrêtée ; un tag déjà créé donne <code>Release &lt;tag&gt; déjà taguée</code>.
+  </li>
+</ol>
+<p>Pour les détails de chaque commande, voir « Commandes » dans le <a href="../README.md#commandes">README</a>.</p>
+</section>
+
+<section id="acteurs">
+<h2>2. Qui fait quoi</h2>
+<p>L’<strong>orchestrateur</strong> est la session principale : il coordonne et ne code pas. Les sous-agents travaillent dans leur coin et ne lui rendent qu’<strong>une ligne</strong>, ce qui garde son contexte léger.</p>
+
+<div class="carte">
+  <h3>Orchestrateur (session principale)</h3>
+  <p><span class="modele">modèle de ta session</span> Exécute <code>/vagues:vague</code> : lance les sous-agents, lit la CI, fusionne, écrit le journal. C’est le seul à fusionner. <code>/vagues:planifier</code> demande le modèle <code>claude-fable-5-2</code> ; <code>/vagues:release</code>, le modèle <code>fable</code>.</p>
+</div>
+<div class="carte">
+  <h3><code>vagues:implementeur</code></h3>
+  <p><span class="modele">Sonnet</span> Reçoit un numéro d’issue : branche, code, tests, push, PR. Ne fusionne ni n’approuve.</p>
+  <pre><code>#69 → https://github.com/<i>o</i>/<i>r</i>/pull/80 | réussi
+#70 → — | bloqué | dépend de #69, non fusionnée</code></pre>
+</div>
+<div class="carte">
+  <h3><code>vagues:reviseur</code></h3>
+  <p><span class="modele">Sonnet</span> Reçoit une PR et son issue, vérifie les critères contre le diff, en lecture seule, et laisse un commentaire avec un marqueur de verdict lié au SHA du dernier commit.</p>
+  <pre><code>PR #80 | approuvé
+PR #81 | refusé | <i>raison principale</i></code></pre>
+</div>
+<div class="carte">
+  <h3><code>vagues:release-mecanique</code></h3>
+  <p><span class="modele">Sonnet</span> Les tâches mécaniques de <code>/vagues:release</code> : <code>tests</code>, <code>notes</code> et <code>tag</code>, par le script <code>scripts/release.py</code>. Il ne décide rien et ne modifie aucun code.</p>
+</div>
+<p class="note">Les agents sont lancés par les commandes ; ils ne sont pas faits pour un usage interactif.</p>
+</section>
+
+<section id="planification">
+<h2>3. Règles de planification</h2>
+<ul>
+  <li><strong>Tailles 1, 2, 4</strong> : petite = 1 point, moyenne = 2, grosse = 4, posées en étiquettes <code>taille-1</code>, <code>taille-2</code>, <code>taille-4</code>. Au-delà de 4, on scinde l’issue.</li>
+  <li><strong>Budget par vague</strong> : 10 points au départ ; <code>/vagues:planifier</code> l’ajuste (entre 4 et 20) selon les vagues coupées et l’utilisation. La somme des tailles d’une vague ne dépasse pas le budget ; une issue seule plus grosse forme sa propre vague.</li>
+  <li><strong>Fichiers distincts</strong> : deux issues d’une même vague ne touchent pas les mêmes fichiers (section « Fichiers probablement touchés » du modèle d’issue).</li>
+  <li><strong>Dépendances</strong> : une issue qui dépend d’une autre va dans une vague suivante.</li>
+</ul>
+
+<h3>Le journal <code>.claude/journal-vagues.md</code></h3>
+<p>C’est la mémoire des vagues, dans le projet. Le <strong>budget courant</strong> (ligne <code>budget:</code> des réglages) n’est noté qu’à cet endroit. <code>/vagues:vague</code> y ajoute une ligne par événement, directement sur <code>main</code>, sans PR :</p>
+<pre><code>- 2026-11-18T14:05Z | vague 3 | ouverte | prévus 8
+- 2026-11-18T14:40Z | vague 3 | issue #70 | taille 2 | fusionnée | PR #81
+- 2026-11-18T16:10Z | vague 3 | fermée | complétés 8/8 | utilisation: __ %</code></pre>
+<div class="note"><strong>À remplir par toi (facultatif).</strong> À la fin d’une vague, remplace le <code>__</code> de <code>utilisation: __ %</code> par le pourcentage d’utilisation affiché dans l’app Claude. <code>/vagues:planifier</code> s’en sert pour ajuster le budget. Ne modifie pas les autres lignes.</div>
+</section>
+
+<section id="garde-fous">
+<h2>4. Garde-fous</h2>
+<p>Ils sont des hooks du plugin : actifs dès que le plugin est activé, sans rien configurer. Ils s’ajoutent à ceux du projet.</p>
+<table>
+  <thead><tr><th>Ce qui est bloqué</th><th>Par quoi</th></tr></thead>
+  <tbody>
+    <tr><td>Fusion et approbation par <code>implementeur</code> ou <code>reviseur</code> ; push sur <code>main</code>/<code>master</code>, push forcé, écriture MCP sur <code>main</code> ; le <code>reviseur</code> ne commite, ne pousse et n’écrit rien</td><td><code>garde-agents-vague.py</code></td></tr>
+    <tr><td>Toute fusion de PR (même par la session principale) sans CI présente et réussie sur le dernier commit <strong>et</strong> sans verdict <code>approuvé</code> du réviseur pour ce même commit. Un nouveau commit invalide l’approbation. Une PR sans CI n’est donc pas fusionnée par un agent</td><td><code>garde-fusion.py</code></td></tr>
+    <tr><td>Fin de l’<code>implementeur</code> tant que la commande de vérification échoue, qu’il reste des modifications non commitées ou que sa branche est <code>main</code> ou non poussée (abandon après 3 blocages : réponse <code>partiel</code> ou <code>bloqué</code>)</td><td><code>implementeur-stop-check.py</code></td></tr>
+  </tbody>
+</table>
+<p><strong>Le lint</strong> n’est pas dans le plugin : il dépend des outils de chaque projet. Dans <code>remtav/template</code>, par exemple, le hook <code>lint-fichier.py</code> du projet lance eslint sur chaque fichier <code>.js</code>/<code>.mjs</code> modifié. C’est un exemple de projet, pas une règle du plugin.</p>
+
+<h3>Désactiver temporairement</h3>
+<p>Variable d’environnement <code>HOOKS_QUALITE_DESACTIVES</code>, avec des noms séparés par des virgules : <code>implementeur-stop-check</code>, <code>garde-fusion</code>, ou <code>tous</code>.</p>
+<pre><code>HOOKS_QUALITE_DESACTIVES=garde-fusion claude</code></pre>
+<ul>
+  <li>Dans une session cloud : variable d’environnement de l’environnement.</li>
+  <li><code>garde-agents-vague.py</code> ne se désactive pas.</li>
+</ul>
+<p>Voir « Hooks » dans le <a href="../README.md#hooks">README</a>.</p>
+</section>
+
+<section id="manuel">
+<h2>5. Ce qui reste manuel</h2>
+<p>Le plugin ne crée rien de ceci à ta place.</p>
+
+<h3>Tâche planifiée de reprise</h3>
+<p>Une fois par projet, crée une tâche planifiée Claude Code (claude.ai/code, ou l’app Claude) sur le dépôt. Elle démarre une nouvelle session à chaque exécution, avec le même environnement que les sessions de vague (accès GitHub en écriture).</p>
+<ul>
+  <li><strong>Horaire</strong> : toutes les 3 heures, par exemple <code>0 */3 * * *</code> (UTC) ; <code>0 */2 * * *</code> pour toutes les 2 heures.</li>
+  <li><strong>Prompt</strong> :</li>
+</ul>
+<pre><code>/vagues:vague reprise</code></pre>
+<p>Sans vague coupée, la réponse est <code>Rien à reprendre</code>, presque sans coût.</p>
+
+<h3>Autres étapes</h3>
+<ul>
+  <li><strong>Étiquettes</strong> : <code>/vagues:installer-vagues</code> crée <code>taille-1</code>, <code>taille-2</code> et <code>taille-4</code> si elle a accès à GitHub ; sinon elle les liste « à créer ». Les étiquettes <code>vague-N</code> sont posées par <code>/vagues:planifier</code>.</li>
+  <li><strong>Accès réseau à GitHub</strong> dans l’environnement cloud : sans lui, le marketplace ne se charge pas.</li>
+  <li><strong>Après l’ajout du plugin</strong> : <code>/reload-skills</code>, ou une nouvelle session.</li>
+  <li><strong>Protection de <code>main</code></strong> : le plugin n’en suppose aucune ; le garde de fusion en tient lieu. Si ton projet en a une, c’est à toi de la régler.</li>
+</ul>
+
+<h3>Installation du plugin en session cloud</h3>
+<div class="attention">En session cloud, Claude Code n’installe pas tout seul le marketplace et le plugin déclarés dans <code>.claude/settings.json</code> (il n’y a pas d’invite de confiance dans ces sessions). Ce qui fonctionne : installer à la main, ou mettre l’installation dans le <strong>script d’installation de l’environnement</strong>. Les commandes exactes sont dans le README, au troisième point connu des sessions cloud. Une fois installé, <code>claude plugin list</code> doit montrer <code>vagues@outils-claude</code> à l’état <code>enabled</code>.</div>
+<p>Voir « Trois points connus des sessions cloud » dans le <a href="../README.md#trois-points-connus-des-sessions-cloud-claude-code-sur-le-web">README</a>.</p>
+</section>
+
+<section id="installer">
+<h2>6. Installer dans un nouveau projet</h2>
+<ol class="etapes">
+  <li><b>1. Copier le bloc de <code>.claude/settings.json</code> du README</b>
+    Il déclare le marketplace <code>outils-claude</code> (avec <code>autoUpdate: true</code>, nécessaire pour recevoir les modifications du plugin) et active <code>vagues@outils-claude</code>. Le créer s’il n’existe pas ; sinon, <strong>fusionner</strong> ses clés avec celles du fichier. Le bloc est dans le <a href="../README.md#installer-dans-un-projet">README</a>.
+  </li>
+  <li><b>2. Ouvrir une nouvelle session, puis lancer <code>/vagues:installer-vagues</code></b>
+    Accepter le marketplace et le plugin si Claude Code le demande. La commande crée le modèle d’issue, le journal, la section « Règles de planification » de <code>CLAUDE.md</code>, les commandes de vérification et les étiquettes <code>taille-*</code>. Elle n’écrase rien et peut être relancée. Pour imposer la commande de vérification rapide : <code>/vagues:installer-vagues "&lt;commande&gt;"</code>.
+  </li>
+  <li><b>3. Relire et commiter, puis <code>/vagues:planifier</code> et <code>/vagues:vague 1</code></b>
+    La commande ne commite rien : tu relis les fichiers créés avant.
+  </li>
+</ol>
+<p>En session cloud, ajoute d’abord l’installation du plugin au script de l’environnement (section 5). Le script d’installation est décrit dans le <a href="../README.md#trois-points-connus-des-sessions-cloud-claude-code-sur-le-web">README</a>.</p>
+</section>
+
+<section id="depannage">
+<h2>7. Dépannage</h2>
+
+<details>
+<summary>Une vague a été coupée</summary>
+<p>Lance <code>/vagues:vague reprise</code> (ou <code>/vagues:vague N</code>) : la commande marque la vague <code>coupée</code>, puis la reprend en relisant l’état de chaque issue sur GitHub ; les issues terminées sont sautées. Si elle répond <code>Vague N en cours (dernière ligne …)</code>, une autre session y a écrit il y a moins de 90 minutes : attends. Pour ne plus y penser, crée la tâche planifiée de la section 5.</p>
+</details>
+
+<details>
+<summary>Une PR est restée ouverte</summary>
+<p>La raison est dans le résumé et dans le journal (ligne <code>ouverte</code>). Les raisons possibles :</p>
+<ul>
+  <li><strong>CI échouée</strong> : corriger, puis relancer la vague.</li>
+  <li><strong>CI absente</strong> : aucune vérification n’est configurée pour ce chemin. Le garde de fusion refuse la fusion par un agent ; fusionne la PR toi-même sur GitHub, ou désactive <code>garde-fusion</code> (section 4).</li>
+  <li><strong>CI en attente</strong> : la commande a attendu 30 minutes au plus ; relance-la.</li>
+  <li><strong>Refusée par le réviseur</strong> : la raison est dans son commentaire.</li>
+  <li><strong>Refusée par le garde de fusion</strong> : la raison est donnée dans le message « Bloqué par le garde de fusion ». Il ne faut pas contourner.</li>
+  <li><strong>Conflit après fusion</strong> : une autre PR de la vague a été fusionnée ; la mise à jour de la branche a échoué.</li>
+</ul>
+</details>
+
+<details>
+<summary>Il n’y a pas de CI</summary>
+<p>Cela arrive quand le workflow du projet ne se déclenche que sur certains chemins. Par exemple, dans <code>remtav/template</code>, une PR qui ne touche que <code>.claude/</code> n’a aucune vérification. Le plugin ne fusionne pas sans CI, même si les tests locaux ont réussi : c’est à toi de fusionner la PR, ou de désactiver le garde.</p>
+</details>
+
+<details>
+<summary>Les commandes <code>/vagues:…</code> n’existent pas</summary>
+<ul>
+  <li>Plugin récemment ajouté : <code>/reload-skills</code>, ou une nouvelle session.</li>
+  <li>Session cloud : l’installation automatique ne se fait pas (section 5). Vérifie avec <code>claude plugin list</code> ; au besoin, installe avec les deux commandes <code>claude plugin marketplace add</code> et <code>claude plugin install</code>, ou ajoute-les au script d’installation de l’environnement.</li>
+  <li>L’environnement doit pouvoir joindre GitHub.</li>
+</ul>
+</details>
+
+<details>
+<summary>Le contrôle de fin bloque l’implémenteur</summary>
+<p>Sans commande de vérification configurée, le plugin refuse plutôt que de deviner et indique où la configurer : <code>.claude/verification-implementeur</code> (ou la variable <code>VERIFICATION_IMPLEMENTEUR</code>). Même chose pour la suite complète d’une release : <code>.claude/tests-complets</code> (ou <code>RELEASE_TEST_CMD</code>).</p>
+</details>
+
+<details>
+<summary>Le plugin ne se met pas à jour</summary>
+<p><code>/plugin marketplace update outils-claude</code>, puis <code>/reload-skills</code> ou une nouvelle session. Vérifie aussi que <code>autoUpdate: true</code> est dans le bloc du <code>settings.json</code>.</p>
+</details>
+</section>
+
+</main>
+<footer>
+  <p>Référence : le <a href="../README.md">README</a> du dépôt <code>remtav/outils-claude</code>.</p>
+</footer>
+</body>
+</html>

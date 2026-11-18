@@ -2,6 +2,8 @@
 
 Dépôt de référence des outils Claude Code de remtav. C'est un **marketplace** de plugins Claude Code (nom : `outils-claude`). Il contient pour l'instant un plugin : **`vagues`**.
 
+**Nouveau au workflow ?** Le [guide du workflow des vagues](docs/guide-vagues.html) (une page HTML, lisible sur téléphone) explique le cycle, qui fait quoi, les garde-fous et le dépannage. Ce README reste la référence d'installation.
+
 ## Plugin `vagues`
 
 La mécanique des vagues pour développer un projet avec Claude Code, y compris sur le web ou depuis un téléphone :
@@ -112,10 +114,19 @@ Sans vague coupée, la commande répond `Rien à reprendre` et s'arrête aussit�
 
 Côté projet, `autoUpdate: true` (bloc d'installation ci-dessus) fait rafraîchir le marketplace : dans une session interactive, après le premier message, Claude Code attend un délai aléatoire (dix minutes au plus) puis met à jour les plugins sur le disque ; la modification est active à la session suivante. Pour l'avoir tout de suite : `/plugin marketplace update outils-claude`, puis `/reload-skills` ou une nouvelle session.
 
-### Deux points connus des sessions cloud (Claude Code sur le web)
+### Trois points connus des sessions cloud (Claude Code sur le web)
 
 1. **Accès réseau à GitHub** : l'environnement de la session doit pouvoir joindre GitHub pour récupérer le marketplace (dépôt public `remtav/outils-claude`). Sinon, le plugin n'est pas chargé : ni commandes `/vagues:*`, ni agents, ni garde-fous.
 2. **Plugin pas encore actif dans la première session** : un plugin récemment ajouté peut ne pas être chargé tout de suite. Essayer `/reload-skills`, ou ouvrir une nouvelle session. Le marketplace déclaré dans `.claude/settings.json` ne s'applique qu'une fois le dossier du projet approuvé (« trust »).
+3. **Pas d'installation automatique au démarrage** : en session cloud, Claude Code n'installe pas tout seul un marketplace et un plugin déclarés dans le `.claude/settings.json` du projet (pas d'invite de confiance dans ces sessions). Ce qui fonctionne : installer à la main, ou mettre ces commandes dans le **script d'installation de l'environnement** :
+
+   ```
+   claude plugin marketplace add remtav/outils-claude
+   claude plugin install vagues@outils-claude --scope project
+   git checkout -- .claude/settings.json
+   ```
+
+   (le `git checkout` remet `.claude/settings.json` tel quel : l'installation le réordonne). `claude plugin list` doit alors afficher `vagues@outils-claude` à l'état `enabled`. GitHub reste joignable ; seule l'installation au démarrage manque.
 
 ## Développer ce dépôt
 
