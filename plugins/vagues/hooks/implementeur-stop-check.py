@@ -9,11 +9,14 @@ Repris de remtav/template (#73), rendu générique (#72) :
 Contrôles :
 - la commande de vérification du projet réussit : variable VERIFICATION_IMPLEMENTEUR,
   sinon première ligne utile (non vide, sans « # ») de .claude/verification-implementeur
-  dans le projet ($CLAUDE_PROJECT_DIR). Aucune commande par défaut : sans réglage,
+  dans l'arbre de travail de l'implémenteur. Aucune commande par défaut : sans réglage,
   le contrôle bloque et dit où le configurer (échec fermé ; /installer-vagues crée le fichier) ;
 - aucune modification non commitée depuis le départ (fichiers déjà modifiés au
   départ exclus) ;
 - branche courante ni main/master ni tête détachée, et poussée sur origin.
+Arbre contrôlé : racine git du `cwd` de l'événement (l'implémenteur est lancé avec
+`isolation: "worktree"`, son arbre n'est donc pas $CLAUDE_PROJECT_DIR), sinon
+$CLAUDE_PROJECT_DIR, sinon le dossier courant.
 Abandon après 3 blocages : laisse finir et demande de répondre `partiel` ou `bloqué`.
 Ignore les autres agents (accepte `implementeur` et `vagues:implementeur`) et ne
 fait rien sans instantané. Désactivation temporaire : HOOKS_QUALITE_DESACTIVES
@@ -59,6 +62,16 @@ def git(project_dir, *args):
     return subprocess.run(["git", *args], cwd=project_dir, capture_output=True, text=True)
 
 
+def dossier_controle(event):
+    """Racine de l'arbre de l'implémenteur : son worktree d'abord, le projet sinon."""
+    cwd = event.get("cwd")
+    if cwd and os.path.isdir(cwd):
+        top = git(cwd, "rev-parse", "--show-toplevel")
+        if top.returncode == 0 and top.stdout.strip():
+            return os.path.realpath(top.stdout.strip())
+    return os.path.realpath(os.environ.get("CLAUDE_PROJECT_DIR") or cwd or os.getcwd())
+
+
 def problemes_git(state, project_dir):
     problems = []
     after = etat_arbre.tree(project_dir)
@@ -96,7 +109,7 @@ def main():
         return 0
     mode = sys.argv[1] if len(sys.argv) > 1 else "stop"
     key = "implementeur-" + str(event.get("agent_id") or event.get("session_id") or "default")
-    project_dir = os.path.realpath(os.environ.get("CLAUDE_PROJECT_DIR") or event.get("cwd") or os.getcwd())
+    project_dir = dossier_controle(event)
 
     if mode == "start":
         etat_arbre.save(key, {"tree": etat_arbre.tree(project_dir), "blocks": 0})
