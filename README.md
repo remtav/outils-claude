@@ -8,7 +8,7 @@ Dépôt de référence des outils Claude Code de remtav. C'est un **marketplace*
 
 La mécanique des vagues pour développer un projet avec Claude Code, y compris sur le web ou depuis un téléphone :
 
-- **issues** : unités de travail implémentables seules, taillées 1, 2 ou 4 points (étiquettes `taille-1|2|4`) ;
+- **issues** : unités de travail implémentables seules, taillées 1, 2 ou 4 points (étiquettes `taille-1|2|4`), **préparées** avec Opus par `/vagues:preparer-issue` (étiquette `prête`) pour que Sonnet les implémente sans rien deviner ;
 - **vagues** : groupes d'issues indépendantes (étiquette `vague-N`), lancées d'un coup par `/vagues:vague N` ;
 - **releases** : plusieurs vagues, closes par `/vagues:release` (tests, audit, nettoyage, notes, tag).
 
@@ -42,7 +42,9 @@ L'orchestrateur reste léger en contexte : il délègue chaque issue à un sous-
 
    ou `/vagues:installer-vagues "<commande de vérification>"` pour imposer la commande de vérification rapide. La commande demande l'autorisation d'écrire dans `.claude/` (dossier protégé par Claude Code). Elle n'écrase aucun fichier existant et peut être relancée.
 
-3. Relire et commiter les fichiers créés, puis `/vagues:planifier` et `/vagues:vague 1`.
+3. Relire et commiter les fichiers créés, puis `/vagues:preparer-issue #N` pour chaque issue existante (elles n'ont pas l'étiquette `prête` : c'est voulu), `/vagues:planifier` et `/vagues:vague 1`.
+
+**Préparer (Opus) → vague (Sonnet)** : `/vagues:preparer-issue` met l'effort de réflexion dans l'issue ; `/vagues:vague` ne confie à Sonnet que les issues `prête`.
 
 Hors des sessions cloud, on peut aussi installer à la main : `/plugin marketplace add remtav/outils-claude` puis `/plugin install vagues@outils-claude`.
 
@@ -52,9 +54,10 @@ Les composants d'un plugin portent le préfixe du plugin. **Forme documentée et
 
 | Commande | Rôle |
 |---|---|
-| `/vagues:installer-vagues [commande]` | Prépare le projet : modèle d'issue, journal, section « Règles de planification » dans `CLAUDE.md`, commandes de vérification, étiquettes `taille-*`. |
+| `/vagues:installer-vagues [commande]` | Prépare le projet : modèle d'issue, journal, section « Règles de planification » dans `CLAUDE.md`, commandes de vérification, étiquettes `taille-*`, `prête` et `à-préciser`. |
+| `/vagues:preparer-issue <idée \| #N> [brouillon]` | Prépare une issue (Opus) : lit le code, écrit l'issue au modèle enrichi (plan d'implémentation, tests à écrire d'abord, commandes de vérification, pièges, exemples, questions ouvertes), taille 1, 2 ou 4 (scinde au-delà), étiquettes `taille-N` + `prête`, ou `à-préciser` si une décision manque. `#N` enrichit une issue existante (texte d'origine gardé sous « Demande d'origine ») ; `brouillon` n'écrit rien. Ne pose jamais `vague-N`. |
 | `/vagues:planifier [K] [lecture-seule]` | Lit le journal, ajuste budget et estimations, redécoupe les issues bloquées, forme les `K` prochaines vagues (2 par défaut). Prévue pour le modèle Fable. |
-| `/vagues:vague <N \| vague-N \| reprise>` | Orchestre une vague : un `implementeur` par issue (3 au plus en parallèle), un `reviseur` par PR, fusion seulement si CI réussie **et** réviseur `approuvé`. Écrit le journal. |
+| `/vagues:vague <N \| vague-N \| reprise>` | Orchestre une vague : un `implementeur` par issue `prête` (3 au plus en parallèle ; une issue sans `prête` est notée `bloquée : non préparée` et aucun sous-agent n'est lancé), un `reviseur` par PR, fusion seulement si CI réussie **et** réviseur `approuvé`. Écrit le journal. |
 | `/vagues:release <tag> <N…> [depuis=…]` | Clôt une release : vagues fusionnées, suite complète, audit, PR de nettoyage, issues de consolidation, notes, tag seulement si tout est vert. |
 
 ### Agents
@@ -134,7 +137,7 @@ Côté projet, `autoUpdate: true` (bloc d'installation ci-dessus) fait rafraîch
 plugins/vagues/
 ├── .claude-plugin/plugin.json
 ├── agents/        implementeur.md, reviseur.md, release-mecanique.md
-├── commands/      vague.md, planifier.md, release.md, installer-vagues.md
+├── commands/      vague.md, planifier.md, release.md, installer-vagues.md, preparer-issue.md
 ├── hooks/         hooks.json, garde-agents-vague.py, garde-fusion.py, implementeur-stop-check.py, etat_arbre.py
 ├── scripts/       release.py
 └── modeles/       tache.md, journal-vagues.md, regles-planification.md, verification-implementeur, tests-complets
