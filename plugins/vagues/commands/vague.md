@@ -41,12 +41,13 @@ Lis enfin le **budget** dans les réglages du journal (ligne `budget:`, seul end
 
 ## 2. Implémentation
 
-Pour chaque issue à implémenter (étiquette `prête`, sans PR), lance un sous-agent `implementeur` du plugin (outil Agent, `subagent_type: "vagues:implementeur"`) avec ce message, **et rien d'autre** :
+Pour chaque issue à implémenter (étiquette `prête`, sans PR), lance un sous-agent `implementeur` du plugin (outil Agent, `subagent_type: "vagues:implementeur"`, **`isolation: "worktree"`**) avec ce message, **et rien d'autre** :
 
 ```
 Issue #<numéro>. Réponds en une seule ligne au format de ta définition.
 ```
 
+- **Toujours `isolation: "worktree"`** : chaque implémenteur travaille dans son propre arbre git, jamais dans la copie de cette session. Sans cela, des implémenteurs lancés en parallèle partagent le même dossier et changent de branche l'un sous l'autre. Si l'outil Agent refuse l'isolation (pas de dépôt git, par ex.), lance les implémenteurs **un à la fois**.
 - **Au plus 3 sous-agents `implementeur` en même temps** ; lance le suivant quand l'un répond.
 - Garde seulement sa ligne de réponse (`#<issue> → <PR ou —> | réussi|bloqué|partiel | <raison>`).
 - `bloqué` ou pas de PR : l'issue est **bloquée** ; passe à la suivante.

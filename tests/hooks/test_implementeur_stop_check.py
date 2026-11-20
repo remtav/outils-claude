@@ -47,8 +47,8 @@ class Base(unittest.TestCase):
     def push(self):
         git(self.project, "push", "-q", "-u", "origin", "HEAD")
 
-    def run_hook(self, mode=None, agent_type="implementeur", verif="true", extra_env=None):
-        event = {"session_id": "s", "agent_id": self.agent_id, "cwd": self.project}
+    def run_hook(self, mode=None, agent_type="implementeur", verif="true", extra_env=None, cwd=None):
+        event = {"session_id": "s", "agent_id": self.agent_id, "cwd": cwd or self.project}
         if agent_type is not None:
             event["agent_type"] = agent_type
         env = dict(os.environ, CLAUDE_PROJECT_DIR=self.project, TMPDIR=self.state_dir)
@@ -227,6 +227,41 @@ class Configuration(Base):
         for value in ("implementeur-stop-check", "tous"):
             with self.subTest(value=value):
                 self.assert_passes("handback", verif="false", extra_env={"HOOKS_QUALITE_DESACTIVES": value})
+
+
+class Worktree(Base):
+    """L'implémenteur tourne dans son worktree (isolation: "worktree") ; CLAUDE_PROJECT_DIR
+    reste la copie principale, sur main et sale : c'est le worktree qui est contrôlé."""
+
+    def setUp(self):
+        super().setUp()
+        git(self.project, "switch", "-q", "main")
+        self.wt = os.path.join(self.tmp.name, "wt")
+        git(self.project, "worktree", "add", "-q", "-b", "34-autre", self.wt, "main")
+        with open(os.path.join(self.project, "sale.txt"), "w") as f:
+            f.write("copie principale\n")
+
+    def test_worktree_pret_passe(self):
+        self.run_hook("start", cwd=self.wt)
+        with open(os.path.join(self.wt, "b.txt"), "w") as f:
+            f.write("b\n")
+        git(self.wt, "add", "b.txt")
+        git(self.wt, "commit", "-q", "-m", "b")
+        git(self.wt, "push", "-q", "-u", "origin", "HEAD")
+        self.assert_passes(None, cwd=self.wt)
+
+    def test_worktree_non_pousse_bloque(self):
+        self.run_hook("start", cwd=self.wt)
+        reason = self.assert_blocked(None, "34-autre", "pas poussée", cwd=self.wt)
+        self.assertNotIn("sale.txt", reason)
+
+    def test_sous_dossier_du_worktree(self):
+        sub = os.path.join(self.wt, "sous")
+        os.mkdir(sub)
+        self.run_hook("start", cwd=sub)
+        with open(os.path.join(sub, "c.txt"), "w") as f:
+            f.write("c\n")
+        self.assert_blocked(None, "sous/c.txt", cwd=sub)
 
 
 if __name__ == "__main__":
