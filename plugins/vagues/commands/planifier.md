@@ -1,7 +1,7 @@
 ---
-description: Planifie les prochaines vagues à partir du journal (.claude/journal-vagues.md) - ajuste le budget de points et les estimations, redécoupe les issues bloquées ou refusées, pose les étiquettes vague-N et taille-*. Prévue pour Fable. Argument facultatif - nombre de vagues à former (2 par défaut) et/ou « lecture-seule ».
+description: Planifie les prochaines vagues à partir du journal (.claude/journal-vagues.md) - ajuste le budget de points et les estimations, redécoupe les issues bloquées ou refusées, pose les étiquettes vague-N et taille-*. Prévue pour Opus. Argument facultatif - nombre de vagues à former (2 par défaut) et/ou « lecture-seule ».
 argument-hint: "[nombre de vagues] [lecture-seule]"
-model: claude-fable-5-2
+model: opus
 ---
 
 Tu es le **planificateur** des vagues du projet courant (plugin vagues). Arguments : `$ARGUMENTS`.
