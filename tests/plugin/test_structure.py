@@ -1,4 +1,4 @@
-"""Structure du marketplace et du plugin vagues, sans Claude Code.
+"""Structure du marketplace et du plugin kalmia, sans Claude Code.
 
 Lancer : python3 -m unittest discover -s tests/plugin -v
 Vérifie les manifestes, les chemins de hooks.json et des fichiers Markdown, les noms
@@ -11,7 +11,7 @@ import re
 import unittest
 
 ROOT = os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
-PLUGIN = os.path.join(ROOT, "plugins", "vagues")
+PLUGIN = os.path.join(ROOT, "plugins", "kalmia")
 
 
 def load(*parts):
@@ -45,12 +45,12 @@ class Manifestes(unittest.TestCase):
         self.assertEqual(market["name"], "outils-claude")
         self.assertTrue(market["owner"]["name"])
         entries = {p["name"]: p for p in market["plugins"]}
-        self.assertEqual(entries["vagues"]["source"], "./plugins/vagues")
-        self.assertTrue(os.path.isdir(os.path.join(ROOT, entries["vagues"]["source"])))
+        self.assertEqual(entries["kalmia"]["source"], "./plugins/kalmia")
+        self.assertTrue(os.path.isdir(os.path.join(ROOT, entries["kalmia"]["source"])))
 
     def test_plugin(self):
         plugin = load(PLUGIN, ".claude-plugin", "plugin.json")
-        self.assertEqual(plugin["name"], "vagues")
+        self.assertEqual(plugin["name"], "kalmia")
         self.assertTrue(plugin["description"])
         self.assertTrue(plugin["author"]["name"])
         # Seul plugin.json se trouve dans .claude-plugin/ ; le reste est à la racine du plugin.
@@ -59,7 +59,7 @@ class Manifestes(unittest.TestCase):
     def test_version_a_un_seul_endroit(self):
         market = load(ROOT, ".claude-plugin", "marketplace.json")
         plugin = load(PLUGIN, ".claude-plugin", "plugin.json")
-        entry = next(p for p in market["plugins"] if p["name"] == "vagues")
+        entry = next(p for p in market["plugins"] if p["name"] == "kalmia")
         self.assertFalse("version" in plugin and "version" in entry, "version dans les deux manifestes")
 
 
@@ -84,9 +84,9 @@ class Hooks(unittest.TestCase):
     def test_matcher_implementeur(self):
         for event in ("SubagentStart", "SubagentStop"):
             for entry in self.hooks[event]:
-                for name in ("implementeur", "vagues:implementeur"):
+                for name in ("implementeur", "kalmia:implementeur"):
                     self.assertTrue(re.search(entry["matcher"], name), (event, name))
-                for name in ("gab", "reviseur", "vagues:reviseur", "autre:implementeur", "implementeur2"):
+                for name in ("gab", "reviseur", "kalmia:reviseur", "autre:implementeur", "implementeur2"):
                     self.assertFalse(re.search(entry["matcher"], name), (event, name))
 
     def test_evenements_connus(self):
@@ -118,8 +118,8 @@ class Composants(unittest.TestCase):
         agents = {os.path.basename(p)[:-3] for p in plugin_files("agents/*.md")}
         for path in plugin_files("commands/*.md"):
             for value in re.findall(r'subagent_type: "([^"]+)"', read(path)):
-                self.assertTrue(value.startswith("vagues:"), (path, value))
-                self.assertIn(value.removeprefix("vagues:"), agents, (path, value))
+                self.assertTrue(value.startswith("kalmia:"), (path, value))
+                self.assertIn(value.removeprefix("kalmia:"), agents, (path, value))
 
     def test_chemins_du_plugin_existent(self):
         for path in plugin_files("**/*.md"):
@@ -154,6 +154,15 @@ class PreparerIssue(unittest.TestCase):
         self.assertIn("Prévue pour Opus.", read(path))
         self.assertNotRegex(read(path), r"(?i)fable")
 
+    def test_release_sur_opus_sans_mention_de_fable(self):
+        path = os.path.join(PLUGIN, "commands", "release.md")
+        self.assertRegex(frontmatter(path), r"(?m)^model: opus$")
+        self.assertNotRegex(read(path), r"(?i)fable")
+
+    def test_planifier_borne_le_budget_a_50(self):
+        text = read(os.path.join(PLUGIN, "commands", "planifier.md"))
+        self.assertIn("**4 à 50 points**", text)
+
     def test_modele_a_les_six_sections_dans_l_ordre(self):
         text = read(os.path.join(PLUGIN, "modeles", "tache.md"))
         titres = re.findall(r"(?m)^## (.+)$", text)
@@ -170,7 +179,7 @@ class PreparerIssue(unittest.TestCase):
     def test_vague_saute_les_issues_sans_etiquette_prete(self):
         text = read(os.path.join(PLUGIN, "commands", "vague.md"))
         self.assertIn("`prête`", text)
-        self.assertIn("non préparée (lancer /vagues:preparer-issue #", text)
+        self.assertIn("non préparée (lancer /kalmia:preparer-issue #", text)
 
     def test_planifier_et_release_utilisent_le_modele_enrichi(self):
         for name in ("planifier", "release"):

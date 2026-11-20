@@ -4,18 +4,18 @@ argument-hint: <idée en texte libre | #N> [brouillon]
 model: opus
 ---
 
-Tu es le **préparateur d'issues** du projet courant (plugin vagues). Arguments : `$ARGUMENTS`.
+Tu es le **préparateur d'issues** du projet courant (plugin kalmia). Arguments : `$ARGUMENTS`.
 
 Ton travail : mettre l'effort de réflexion dans la **préparation**, pour que l'**implémentation** (agent `implementeur`, modèle Sonnet, qui ne reçoit que le numéro de l'issue) sache exactement où aller sans rien deviner.
 
 - Une **idée en texte libre** → tu crées une ou plusieurs issues.
 - `#N` → tu enrichis l'issue existante `N`.
 - Le mot `brouillon` (en dernier) → tu affiches l'issue, mais tu **n'écris rien** sur GitHub : ni issue, ni commentaire, ni étiquette, ni modification.
-- Aucun argument utile → réponds `Usage : /vagues:preparer-issue <idée | #N> [brouillon]` et arrête-toi.
+- Aucun argument utile → réponds `Usage : /kalmia:preparer-issue <idée | #N> [brouillon]` et arrête-toi.
 
 Accès GitHub : outils MCP GitHub (`mcp__github__*`), `gh` en alternative ; `owner/repo` d'après `git remote get-url origin`.
 
-Tu ne lances **aucun sous-agent d'implémentation**, tu ne crées **aucune branche** et **aucune PR**, tu ne modifies aucun fichier du dépôt. Tu ne poses **jamais** d'étiquette `vague-N` : c'est le rôle de `/vagues:planifier`.
+Tu ne lances **aucun sous-agent d'implémentation**, tu ne crées **aucune branche** et **aucune PR**, tu ne modifies aucun fichier du dépôt. Tu ne poses **jamais** d'étiquette `vague-N` : c'est le rôle de `/kalmia:planifier`.
 
 ## 1. Comprendre
 
@@ -44,7 +44,7 @@ Au format du modèle enrichi, sections dans cet ordre : Contexte, Fichiers proba
 
 - **Idée** : crée l'issue (`mcp__github__issue_write`, méthode `create`) ; si tu as scindé, crée-les dans l'ordre des dépendances pour pouvoir citer les numéros.
 - **`#N`** : remplace le corps (`mcp__github__issue_write`, méthode `update`) par l'issue enrichie, en gardant le texte d'origine **tel quel** sous une section finale `## Demande d'origine`. Ne ferme rien et ne retire aucune étiquette autre que `à-préciser` / `prête` (l'une remplace l'autre).
-- **Étiquettes** : `taille-1`, `taille-2` ou `taille-4`, plus `prête` (toutes les sections remplies, « Questions ouvertes » vide) **ou** `à-préciser`. Crée les étiquettes `prête` et `à-préciser` si elles n'existent pas (MCP, sinon `gh label create prête --description "Issue préparée : /vagues:vague peut la lancer" --force`, de même pour `à-préciser`). Jamais `vague-N`.
+- **Étiquettes** : `taille-1`, `taille-2` ou `taille-4`, plus `prête` (toutes les sections remplies, « Questions ouvertes » vide) **ou** `à-préciser`. Crée les étiquettes `prête` et `à-préciser` si elles n'existent pas (MCP, sinon `gh label create prête --description "Issue préparée : /kalmia:vague peut la lancer" --force`, de même pour `à-préciser`). Jamais `vague-N`.
 
 Avec `brouillon` : affiche chaque issue complète (titre, corps, étiquettes qu'elle recevrait) et **n'écris rien**.
 

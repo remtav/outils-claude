@@ -1,4 +1,4 @@
-"""Tests de plugins/vagues/hooks/implementeur-stop-check.py par entrées JSON factices.
+"""Tests de plugins/kalmia/hooks/implementeur-stop-check.py par entrées JSON factices.
 
 Lancer : python3 -m unittest discover -s tests/hooks -v
 Chaque test travaille dans un dépôt git jetable avec un « origin » nu local, et
@@ -13,7 +13,7 @@ import tempfile
 import unittest
 
 ROOT = os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
-HOOK = os.path.join(ROOT, "plugins", "vagues", "hooks", "implementeur-stop-check.py")
+HOOK = os.path.join(ROOT, "plugins", "kalmia", "hooks", "implementeur-stop-check.py")
 
 
 def git(cwd, *args):
@@ -102,8 +102,8 @@ class Filtrage(Base):
         self.assert_passes(None, verif="false")
 
     def test_prefixe_de_plugin(self):
-        self.run_hook("start", agent_type="vagues:implementeur")
-        self.assert_blocked("handback", "vérification", agent_type="vagues:implementeur", verif="false")
+        self.run_hook("start", agent_type="kalmia:implementeur")
+        self.assert_blocked("handback", "vérification", agent_type="kalmia:implementeur", verif="false")
 
 
 class Controles(Base):

@@ -1,4 +1,4 @@
-"""Tests de plugins/vagues/scripts/release.py (sous-commandes notes, tests et tag de /release).
+"""Tests de plugins/kalmia/scripts/release.py (sous-commandes notes, tests et tag de /release).
 
 Lancer : python3 -m unittest discover -s tests/release -v
 
@@ -15,7 +15,7 @@ import tempfile
 import unittest
 
 ROOT = os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
-SCRIPT = os.environ.get("RELEASE_SCRIPT") or os.path.join(ROOT, "plugins", "vagues", "scripts", "release.py")
+SCRIPT = os.environ.get("RELEASE_SCRIPT") or os.path.join(ROOT, "plugins", "kalmia", "scripts", "release.py")
 
 
 def git(cwd, *args):

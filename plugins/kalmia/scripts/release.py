@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Tâches mécaniques de la commande /release du plugin vagues : notes, tests et tag.
+"""Tâches mécaniques de la commande /release du plugin kalmia : notes, tests et tag.
 
   release.py notes <tag> [--depuis <commit|tag|date>] [--sortie <fichier>]
       Liste les PR fusionnées dans HEAD depuis le tag précédent (ou depuis
@@ -117,7 +117,7 @@ def test_command():
     except OSError:
         pass
     raise Stop(f"aucune commande de tests configurée : écris-la sur la première ligne de {TEST_CONFIG} "
-               "dans le projet (ou lance /vagues:installer-vagues), ou définis RELEASE_TEST_CMD")
+               "dans le projet (ou lance /kalmia:installer-vagues), ou définis RELEASE_TEST_CMD")
 
 
 def run_tests():

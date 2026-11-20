@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Garde des agents de vague (PreToolUse, déclaré dans hooks/hooks.json du plugin vagues).
+"""Garde des agents de vague (PreToolUse, déclaré dans hooks/hooks.json du plugin kalmia).
 
 Règles `implementeur` et `reviseur` extraites de `agent-guard.py` (remtav/template) :
 - aucun des deux ne fusionne (Bash `gh pr merge`, MCP `merge_pull_request` et
@@ -10,7 +10,7 @@ Règles `implementeur` et `reviseur` extraites de `agent-guard.py` (remtav/templ
 - `reviseur` en plus : ni commit, ni push, ni écriture de fichier.
 
 L'agent vient de `agent_type` (dans un sous-agent, avec le préfixe du plugin :
-`vagues:implementeur`) ou de argv[1] (mode agent principal) ; les deux formes, avec
+`kalmia:implementeur`) ou de argv[1] (mode agent principal) ; les deux formes, avec
 ou sans préfixe, sont acceptées. Tout autre agent, et la session principale, passent :
 leurs règles éventuelles restent dans le projet.
 
@@ -27,7 +27,7 @@ RULES = {
     "implementeur": {"dirs": None, "no_git_write": False},
     "reviseur": {"dirs": (), "no_git_write": True},
 }
-PREFIX = "vagues:"
+PREFIX = "kalmia:"
 PROTECTED_BRANCHES = ("main", "master")
 FILE_TOOLS = ("Write", "Edit", "MultiEdit", "NotebookEdit")
 MCP_MERGE_TOOLS = ("mcp__github__merge_pull_request", "mcp__github__enable_pr_auto_merge")

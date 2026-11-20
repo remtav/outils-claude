@@ -1,4 +1,4 @@
-"""Tests de plugins/vagues/hooks/garde-agents-vague.py par entrées JSON factices.
+"""Tests de plugins/kalmia/hooks/garde-agents-vague.py par entrées JSON factices.
 
 Lancer : python3 -m unittest discover -s tests/hooks -v
 Repris de tests/hooks/test_agent_guard.py de remtav/template (règles implementeur et
@@ -13,8 +13,8 @@ import tempfile
 import unittest
 
 ROOT = os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
-GUARD = os.path.join(ROOT, "plugins", "vagues", "hooks", "garde-agents-vague.py")
-HOOKS_JSON = os.path.join(ROOT, "plugins", "vagues", "hooks", "hooks.json")
+GUARD = os.path.join(ROOT, "plugins", "kalmia", "hooks", "garde-agents-vague.py")
+HOOKS_JSON = os.path.join(ROOT, "plugins", "kalmia", "hooks", "hooks.json")
 
 
 def run(agent_type, tool_name, tool_input, argv_agent=None):
@@ -56,7 +56,7 @@ def mcp_file(tool, branch):
 
 
 MCP_FILE_TOOLS = ("mcp__github__push_files", "mcp__github__create_or_update_file", "mcp__github__delete_file")
-NEW_AGENTS = ("implementeur", "reviseur", "vagues:implementeur", "vagues:reviseur")
+NEW_AGENTS = ("implementeur", "reviseur", "kalmia:implementeur", "kalmia:reviseur")
 
 
 class NewAgentsCommon(unittest.TestCase):
@@ -106,7 +106,7 @@ class NewAgentsCommon(unittest.TestCase):
 
     def test_argv_agent(self):
         # mode agent principal (`claude --agent implementeur`) : `garde-agents-vague.py <agent>`
-        for agent in ("implementeur", "reviseur", "vagues:implementeur", "vagues:reviseur"):
+        for agent in ("implementeur", "reviseur", "kalmia:implementeur", "kalmia:reviseur"):
             self.assertEqual(run(None, *MERGE, argv_agent=agent)[0], 2)
             self.assertEqual(run(None, *APPROVE, argv_agent=agent)[0], 2)
             self.assertEqual(run(None, *bash("git push origin main"), argv_agent=agent)[0], 2)
@@ -118,16 +118,16 @@ class NewAgentsCommon(unittest.TestCase):
 
 class Implementeur(NewAgentsCommon):
     def test_commit_and_branch_push_allowed(self):
-        for agent in ("implementeur", "vagues:implementeur"):
+        for agent in ("implementeur", "kalmia:implementeur"):
             self.assertAllowed(agent, bash("git commit -m 'x' && git push -u origin 69-agents"))
 
     def test_write_anywhere_allowed(self):
-        for agent in ("implementeur", "vagues:implementeur"):
+        for agent in ("implementeur", "kalmia:implementeur"):
             self.assertAllowed(agent, write(".claude/commands/vague.md"))
             self.assertAllowed(agent, write("templates/projet/README.md"))
 
     def test_mcp_write_branch_allowed(self):
-        for agent in ("implementeur", "vagues:implementeur"):
+        for agent in ("implementeur", "kalmia:implementeur"):
             for tool in MCP_FILE_TOOLS:
                 self.assertAllowed(agent, mcp_file(tool, "69-agents"))
 
@@ -137,22 +137,22 @@ class Implementeur(NewAgentsCommon):
 
 class Reviseur(NewAgentsCommon):
     def test_no_commit_or_push(self):
-        for agent in ("reviseur", "vagues:reviseur"):
+        for agent in ("reviseur", "kalmia:reviseur"):
             self.assertBlocked(agent, bash("git commit -m x"))
             self.assertBlocked(agent, bash("git push -u origin 69-agents"))
 
     def test_no_file_write(self):
-        for agent in ("reviseur", "vagues:reviseur"):
+        for agent in ("reviseur", "kalmia:reviseur"):
             self.assertBlocked(agent, write("README.md"))
             self.assertBlocked(agent, ("Edit", {"file_path": ".claude/hooks/garde-agents-vague.py"}))
 
     def test_no_mcp_file_write_any_branch(self):
-        for agent in ("reviseur", "vagues:reviseur"):
+        for agent in ("reviseur", "kalmia:reviseur"):
             for tool in MCP_FILE_TOOLS:
                 self.assertBlocked(agent, mcp_file(tool, "69-agents"))
 
     def test_comment_review_allowed(self):
-        for agent in ("reviseur", "vagues:reviseur"):
+        for agent in ("reviseur", "kalmia:reviseur"):
             self.assertAllowed(agent, REVIEW_COMMENT)
             self.assertAllowed(agent, bash("gh pr comment 12 --body 'PR #12 | approuvé'"))
 
@@ -184,7 +184,7 @@ class OtherAgentsIgnored(unittest.TestCase):
         (None, mcp_file("mcp__github__push_files", "main")),
         ("Explore", MERGE),
         ("autre:implementeur", MERGE),
-        ("vagues:release-mecanique", bash("git status")),
+        ("kalmia:release-mecanique", bash("git status")),
     ]
 
     def test_cases(self):

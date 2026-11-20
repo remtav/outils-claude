@@ -1,4 +1,4 @@
-"""Tests de plugins/vagues/hooks/garde-fusion.py par entrées JSON factices.
+"""Tests de plugins/kalmia/hooks/garde-fusion.py par entrées JSON factices.
 
 Lancer : python3 -m unittest discover -s tests/hooks -v
 Aucun appel réseau : un faux `gh` (placé en tête du PATH) répond à partir d'un
@@ -13,7 +13,7 @@ import textwrap
 import unittest
 
 ROOT = os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
-HOOK = os.path.join(ROOT, "plugins", "vagues", "hooks", "garde-fusion.py")
+HOOK = os.path.join(ROOT, "plugins", "kalmia", "hooks", "garde-fusion.py")
 
 HEAD = "a" * 40
 OLD = "b" * 40
@@ -113,7 +113,7 @@ class FusionMcp(Base):
         self.assertEqual(code, 0, err)
 
     def test_vaut_pour_tous_les_agents(self):
-        for agent in (None, "jf", "implementeur", "vagues:implementeur"):
+        for agent in (None, "jf", "implementeur", "kalmia:implementeur"):
             with self.subTest(agent=agent):
                 self.assertEqual(self.run_hook(*MERGE, api(checks=[OK_CHECK]), agent_type=agent)[0], 2)
 
