@@ -11,6 +11,8 @@ labels: []
 
 ## Fichiers probablement touchés
 
+<!-- Chemins réels. Sert à ordonner : deux issues d'une même vague qui partagent un fichier sont faites l'une après l'autre (chaîne), les autres en parallèle. -->
+
 - 
 
 ## Critères d'acceptation

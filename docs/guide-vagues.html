@@ -89,14 +89,16 @@ footer{padding-top:16px;padding-bottom:32px;color:var(--discret);font-size:.9rem
     <em>Ce qu’on obtient :</em> une issue étiquetée <code>taille-N</code> et <code>prête</code>, ou <code>à-préciser</code> si une décision manque (la question est écrite dans « Questions ouvertes » : on y répond, puis on relance <code>/kalmia:preparer-issue #N</code>). Au-delà de 4 points, l’idée est scindée en plusieurs issues liées. La commande ne pose jamais <code>vague-N</code>. <strong>Les issues déjà ouvertes n’ont pas <code>prête</code> : c’est voulu</strong>, elles passent d’abord par <code>/kalmia:preparer-issue #N</code>.
   </li>
   <li><b>2. <code>/kalmia:planifier</code> : former les vagues</b>
-    Lit le journal, ajuste le budget de points, redécoupe les issues bloquées, pose les étiquettes <code>vague-N</code> et <code>taille-*</code>.
+    Lit le journal, ajuste le budget de points, redécoupe les issues bloquées, classe les issues par priorité et forme les vagues. <strong>C’est ici que se fait toute l’interaction humaine</strong> : la commande te pose les questions qui attendent une réponse (issues <code>à-préciser</code>, décisions en suspens), prépare les issues qui ne sont pas encore <code>prête</code>, puis te demande de valider le plan. Les étiquettes <code>vague-N</code> et <code>taille-*</code> ne sont posées qu’après.
     <pre><code>/kalmia:planifier
 /kalmia:planifier 3
 /kalmia:planifier lecture-seule</code></pre>
-    <em>Ce qu’on obtient :</em> un résumé court (budget ancien → nouveau, contenu de chaque vague en points, issues redécoupées, issues en attente). Deux vagues par défaut ; un nombre en argument en forme davantage. Avec <code>lecture-seule</code>, tout est calculé et affiché, mais rien n’est écrit.
+    <em>Ce qu’on obtient :</em> un résumé court (budget ancien → nouveau, contenu de chaque vague en points avec ses chaînes, décisions prises, issues redécoupées, issues en attente) et la ligne « Prêt : <code>/kalmia:vague N</code> — aucune intervention requise ». Deux vagues par défaut ; un nombre en argument en forme davantage. Avec <code>lecture-seule</code>, tout est calculé et affiché, mais rien n’est écrit et aucune question n’est posée (elles sont listées).
+    <pre><code>Vague 3 — 8/10 : #70 (2) → #72 (1) ‖ #71 (4) ‖ #75 (1)
+   (→ l’une après l’autre, fichiers communs ; ‖ en parallèle)</code></pre>
   </li>
   <li><b>3. <code>/kalmia:vague N</code> : lancer une vague</b>
-    Un sous-agent (Sonnet) implémente chaque issue <code>prête</code> (trois en parallèle au plus ; une issue sans <code>prête</code> est notée « bloquée : non préparée » et aucun sous-agent n’est lancé pour elle), un autre révise chaque PR, puis la session principale fusionne ce qui est vert et approuvé.
+    <strong>Aucune intervention humaine</strong> : tout a été réglé à l’étape 2. Un sous-agent (Sonnet) implémente chaque issue <code>prête</code> : les issues qui touchent les mêmes fichiers passent l’une après l’autre (chacune repart d’un <code>main</code> qui a déjà fusionné la précédente), les autres en parallèle, trois sous-agents au plus en même temps (une issue sans <code>prête</code> est notée « bloquée : non préparée » et aucun sous-agent n’est lancé pour elle), un autre révise chaque PR, puis la session principale fusionne ce qui est vert et approuvé.
     <pre><code>/kalmia:vague 3</code></pre>
     <em>Ce qu’on obtient :</em> un résumé final.
     <pre><code>Vague 3 — 8/10 points
@@ -157,8 +159,10 @@ PR #81 | refusé | <i>raison principale</i></code></pre>
   <li><strong>Tailles 1, 2, 4</strong> : petite = 1 point, moyenne = 2, grosse = 4, posées en étiquettes <code>taille-1</code>, <code>taille-2</code>, <code>taille-4</code>. Au-delà de 4, on scinde l’issue.</li>
   <li><strong>Budget par vague</strong> : 10 points au départ ; <code>/kalmia:planifier</code> l’ajuste (entre 4 et 50) selon les vagues coupées et l’utilisation. La somme des tailles d’une vague ne dépasse pas le budget ; une issue seule plus grosse forme sa propre vague.</li>
   <li><strong>Issue préparée</strong> : <code>prête</code> = toutes les sections du modèle remplies et aucune question ouverte ; <code>à-préciser</code> = une décision manque. <code>/kalmia:vague</code> ne lance l’implémenteur que sur une issue <code>prête</code>.</li>
-  <li><strong>Fichiers distincts</strong> : deux issues d’une même vague ne touchent pas les mêmes fichiers (section « Fichiers probablement touchés » du modèle d’issue).</li>
-  <li><strong>Dépendances</strong> : une issue qui dépend d’une autre va dans une vague suivante.</li>
+  <li><strong>Priorité</strong> : <code>/kalmia:planifier</code> classe les issues (priorité explicite, issues qui en débloquent d’autres, bugs avant fonctionnalités avant nettoyage, puis numéro) et remplit les vagues dans cet ordre, dans la limite du budget.</li>
+  <li><strong>Fichiers communs</strong> : des issues qui touchent les mêmes fichiers (section « Fichiers probablement touchés » du modèle d’issue) peuvent être dans la même vague ; <code>/kalmia:vague</code> les exécute l’une après l’autre pour éviter les conflits à la fusion. Les issues sans fichier commun s’exécutent en parallèle.</li>
+  <li><strong>Dépendances</strong> : une issue qui dépend d’une autre va dans une vague postérieure à la sienne.</li>
+  <li><strong>Interaction humaine</strong> : questions, décisions et validation du plan se font dans <code>/kalmia:planifier</code>. Une fois les vagues formées, <code>/kalmia:vague</code> ne demande rien.</li>
 </ul>
 
 <h3>Le journal <code>.claude/journal-vagues.md</code></h3>

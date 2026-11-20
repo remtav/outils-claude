@@ -7,6 +7,8 @@ Tu es l'**orchestrateur** de la vague demandée : `$ARGUMENTS`. Tu coordonnes, t
 
 Accès GitHub : outils MCP GitHub (`mcp__github__*`) ; `gh` en alternative s'il est disponible. Le dépôt (`owner/repo`) se lit dans `git remote get-url origin`.
 
+**Aucune intervention humaine.** Les questions et décisions ont été réglées en amont par `/kalmia:planifier` (issues `prête`, sans question ouverte). Pendant la vague, tu ne poses **aucune question** à l'utilisateur (pas d'`AskUserQuestion`) : ce qui manque bloque l'issue concernée, avec sa raison au journal, et la vague continue.
+
 ## 0. Argument
 
 - `N` ou `vague-N` (N entier) → l'étiquette traitée est `vague-N`.
@@ -27,7 +29,7 @@ Liste les issues étiquetées `vague-N` (`mcp__github__list_issues` avec `labels
 | PR ouverte liée (corps contenant `Closes #<issue>`, `Fixes #<issue>` ou `Resolves #<issue>`, le numéro suivi d'une **limite de mot** : `Closes #6` ne désigne pas l'issue 69 ; motif : `(?i)\b(close[sd]?\|fix(e[sd])?\|resolve[sd]?) #<issue>\b`) | passer directement à l'étape 3 (CI + révision) |
 | aucune PR | étape 2 (implémentation) |
 
-**Garde « prête ».** Une issue ouverte de la vague **sans** l'étiquette `prête` n'est jamais confiée à l'implémenteur (une issue qui a déjà une PR ouverte suit sa ligne du tableau). Elle est **bloquée** avec la raison `non préparée (lancer /kalmia:preparer-issue #N)` : écris-la au journal (ligne `issue #I | taille T | bloquée | — | non préparée (lancer /kalmia:preparer-issue #I)`) et mets-la dans « Bloquées » du résumé. **Aucun sous-agent n'est lancé pour elle.** Les issues déjà ouvertes avant l'introduction de `/kalmia:preparer-issue` n'ont pas `prête` : c'est voulu, elles passent d'abord par `/kalmia:preparer-issue #N`. Une issue `à-préciser` est dans le même cas (ses « Questions ouvertes » attendent une décision).
+**Garde « prête ».** `/kalmia:planifier` ne place dans une vague que des issues `prête` ; cette garde couvre les étiquettes posées à la main. Une issue ouverte de la vague **sans** l'étiquette `prête` n'est jamais confiée à l'implémenteur (une issue qui a déjà une PR ouverte suit sa ligne du tableau). Elle est **bloquée** avec la raison `non préparée (lancer /kalmia:preparer-issue #N)` : écris-la au journal (ligne `issue #I | taille T | bloquée | — | non préparée (lancer /kalmia:preparer-issue #I)`) et mets-la dans « Bloquées » du résumé. **Aucun sous-agent n'est lancé pour elle.** Les issues déjà ouvertes avant l'introduction de `/kalmia:preparer-issue` n'ont pas `prête` : c'est voulu, elles passent d'abord par `/kalmia:preparer-issue #N`. Une issue `à-préciser` est dans le même cas (ses « Questions ouvertes » attendent une décision).
 
 Relancer `/kalmia:vague N` sur une vague partiellement faite reprend donc là où elle en était, sans refaire les issues terminées.
 
@@ -39,18 +41,25 @@ Lis enfin le **budget** dans les réglages du journal (ligne `budget:`, seul end
 1. Pour chaque vague **non fermée** du journal (définition à l'étape 0), y compris `N`, dont la dernière ligne d'état n'est pas déjà `coupée` : écris `coupée | complétés C/P`, avec `P` et `C` calculés pour cette vague-là comme ici et à l'étape 5 (issues de son étiquette `vague-M`).
 2. Puis, pour `N` : `reprise | prévus P` si `N` était non fermée (cas de `/kalmia:vague reprise`, ou d'un `/kalmia:vague N` relancé sur une vague coupée), sinon `ouverte | prévus P`.
 
-## 2. Implémentation
+## 2. Implémentation : chaînes en parallèle, issues liées en séquence
 
-Pour chaque issue à implémenter (étiquette `prête`, sans PR), lance un sous-agent `implementeur` du plugin (outil Agent, `subagent_type: "kalmia:implementeur"`, **`isolation: "worktree"`**) avec ce message, **et rien d'autre** :
+Les issues d'une vague ne sont pas toutes lancées en même temps : celles qui touchent les **mêmes fichiers** passent **l'une après l'autre**, pour que leurs PR n'entrent pas en conflit à la fusion ; les autres passent en parallèle.
+
+**Former les chaînes.** Pour les issues à implémenter (étiquette `prête`, sans PR), lis la section « Fichiers probablement touchés » de chacune (corps de l'issue seulement, jamais le code). Deux issues sont **liées** si elles partagent un chemin, ou si un chemin de l'une est un dossier qui contient un chemin de l'autre. Une **chaîne** est un ensemble d'issues liées (directement ou par transitivité), dans l'ordre des numéros d'issue croissants. Une issue sans section exploitable est considérée liée à toutes les autres : elle forme une chaîne à part, lancée **seule**, quand toutes les autres chaînes sont terminées. Une issue qui n'est liée à aucune autre est une chaîne d'une seule issue. Les issues dont la PR est déjà ouverte (étape 1, reprise) sont traitées d'abord à l'étape 3 et comptent comme précédentes dans leur chaîne.
+
+**Exécution.**
+- **Chaînes différentes : en parallèle**, **au plus 3 sous-agents `implementeur` en même temps** ; lance la suite quand l'un répond.
+- **Dans une chaîne : l'une après l'autre.** L'issue suivante d'une chaîne n'est lancée qu'après que la précédente a **abouti à sa fin** : PR fusionnée (étape 3), ou laissée ouverte/bloquée avec sa raison. Ainsi l'implémenteur suivant repart d'un `main` qui contient déjà la fusion précédente. Une chaîne continue même si l'issue précédente a échoué (elle repart alors d'un `main` sans elle ; une éventuelle PR laissée ouverte sera signalée « conflit après fusion » à l'étape 4 si elle finit par entrer en conflit).
+- Pour chaque issue, lance un sous-agent `implementeur` du plugin (outil Agent, `subagent_type: "kalmia:implementeur"`, **`isolation: "worktree"`**) avec ce message, **et rien d'autre** :
 
 ```
 Issue #<numéro>. Réponds en une seule ligne au format de ta définition.
 ```
 
 - **Toujours `isolation: "worktree"`** : chaque implémenteur travaille dans son propre arbre git, jamais dans la copie de cette session. Sans cela, des implémenteurs lancés en parallèle partagent le même dossier et changent de branche l'un sous l'autre. Si l'outil Agent refuse l'isolation (pas de dépôt git, par ex.), lance les implémenteurs **un à la fois**.
-- **Au plus 3 sous-agents `implementeur` en même temps** ; lance le suivant quand l'un répond.
 - Garde seulement sa ligne de réponse (`#<issue> → <PR ou —> | réussi|bloqué|partiel | <raison>`).
-- `bloqué` ou pas de PR : l'issue est **bloquée** ; passe à la suivante.
+- `bloqué` ou pas de PR : l'issue est **bloquée** ; passe à la suivante de sa chaîne.
+- Dès qu'un implémenteur répond avec une PR, fais l'étape 3 pour cette PR **sans attendre** les autres chaînes (c'est elle qui débloque la suite de sa chaîne).
 
 **Journal** : pour chaque issue **bloquée**, écris aussitôt `issue #I | taille T | bloquée | <PR #n ou —> | <raison de l'implementeur>`. Les issues qui ont une PR sont notées à l'étape 3 (fusion) ou 5 (restée ouverte).
 
