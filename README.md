@@ -56,7 +56,7 @@ Les composants d'un plugin portent le préfixe du plugin. **Forme documentée et
 |---|---|
 | `/vagues:installer-vagues [commande]` | Prépare le projet : modèle d'issue, journal, section « Règles de planification » dans `CLAUDE.md`, commandes de vérification, étiquettes `taille-*`, `prête` et `à-préciser`. |
 | `/vagues:preparer-issue <idée \| #N> [brouillon]` | Prépare une issue (Opus) : lit le code, écrit l'issue au modèle enrichi (plan d'implémentation, tests à écrire d'abord, commandes de vérification, pièges, exemples, questions ouvertes), taille 1, 2 ou 4 (scinde au-delà), étiquettes `taille-N` + `prête`, ou `à-préciser` si une décision manque. `#N` enrichit une issue existante (texte d'origine gardé sous « Demande d'origine ») ; `brouillon` n'écrit rien. Ne pose jamais `vague-N`. |
-| `/vagues:planifier [K] [lecture-seule]` | Lit le journal, ajuste budget et estimations, redécoupe les issues bloquées, forme les `K` prochaines vagues (2 par défaut). Prévue pour le modèle Fable. |
+| `/vagues:planifier [K] [lecture-seule]` | Lit le journal, ajuste budget et estimations, redécoupe les issues bloquées, forme les `K` prochaines vagues (2 par défaut). Prévue pour Opus. |
 | `/vagues:vague <N \| vague-N \| reprise>` | Orchestre une vague : un `implementeur` par issue `prête`, chacun dans son propre worktree git (`isolation: "worktree"`) (3 au plus en parallèle ; une issue sans `prête` est notée `bloquée : non préparée` et aucun sous-agent n'est lancé), un `reviseur` par PR, fusion seulement si CI réussie **et** réviseur `approuvé`. Écrit le journal. |
 | `/vagues:release <tag> <N…> [depuis=…]` | Clôt une release : vagues fusionnées, suite complète, audit, PR de nettoyage, issues de consolidation, notes, tag seulement si tout est vert. |
 

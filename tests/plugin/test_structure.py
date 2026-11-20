@@ -148,6 +148,12 @@ class PreparerIssue(unittest.TestCase):
         self.assertTrue(os.path.isfile(path))
         self.assertRegex(frontmatter(path), r"(?m)^model: opus$")
 
+    def test_planifier_sur_opus_sans_mention_de_fable(self):
+        path = os.path.join(PLUGIN, "commands", "planifier.md")
+        self.assertRegex(frontmatter(path), r"(?m)^model: opus$")
+        self.assertIn("Prévue pour Opus.", read(path))
+        self.assertNotRegex(read(path), r"(?i)fable")
+
     def test_modele_a_les_six_sections_dans_l_ordre(self):
         text = read(os.path.join(PLUGIN, "modeles", "tache.md"))
         titres = re.findall(r"(?m)^## (.+)$", text)
