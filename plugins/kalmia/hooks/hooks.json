@@ -34,7 +34,7 @@
     ],
     "SubagentStart": [
       {
-        "matcher": "^(vagues:)?implementeur$",
+        "matcher": "^(kalmia:)?implementeur$",
         "hooks": [
           {
             "type": "command",
@@ -45,7 +45,7 @@
     ],
     "SubagentStop": [
       {
-        "matcher": "^(vagues:)?implementeur$",
+        "matcher": "^(kalmia:)?implementeur$",
         "hooks": [
           {
             "type": "command",

@@ -58,7 +58,7 @@ footer{padding-top:16px;padding-bottom:32px;color:var(--discret);font-size:.9rem
 <body>
 <header>
   <h1>Guide du workflow des vagues</h1>
-  <p class="lead">Comment passer d’une liste d’issues à une release avec le plugin Claude Code <code>vagues</code> : qui fait quoi, quelles règles, quels garde-fous, ce qui reste à faire à la main.</p>
+  <p class="lead">Comment passer d’une liste d’issues à une release avec le plugin Claude Code <code>kalmia</code> : qui fait quoi, quelles règles, quels garde-fous, ce qui reste à faire à la main.</p>
   <p>Ce guide explique et oriente. La référence d’installation, des commandes et des hooks reste le <a href="../README.md">README</a> du dépôt.</p>
   <nav aria-label="Sections">
     <strong>Sections</strong>
@@ -78,41 +78,41 @@ footer{padding-top:16px;padding-bottom:32px;color:var(--discret);font-size:.9rem
 
 <section id="cycle">
 <h2>1. Le cycle complet</h2>
-<p>Le travail suit un chemin : des <strong>issues</strong> sont regroupées en <strong>vagues</strong>, et quelques vagues forment une <strong>release</strong>. Les commandes du plugin portent le préfixe <code>vagues:</code> ; c’est la seule forme documentée (<code>/vagues:vague</code>, pas <code>/vague</code>).</p>
+<p>Le travail suit un chemin : des <strong>issues</strong> sont regroupées en <strong>vagues</strong>, et quelques vagues forment une <strong>release</strong>. Les commandes du plugin portent le préfixe <code>kalmia:</code> ; c’est la seule forme documentée (<code>/kalmia:vague</code>, pas <code>/vague</code>).</p>
 
 <ol class="etapes">
-  <li><b>1. <code>/vagues:preparer-issue</code> : préparer les issues (Opus)</b>
+  <li><b>1. <code>/kalmia:preparer-issue</code> : préparer les issues (Opus)</b>
     Le modèle fort (Opus) lit le code et écrit l’issue pour que le modèle plus petit (Sonnet) l’implémente sans rien deviner : plan d’implémentation, tests à écrire d’abord, commandes de vérification, pièges, exemples à imiter. On donne une idée en texte libre ou <code>#N</code> pour enrichir une issue existante ; <code>brouillon</code> affiche sans rien écrire.
-    <pre><code>/vagues:preparer-issue "ajouter une option --sec au script de release"
-/vagues:preparer-issue #12
-/vagues:preparer-issue brouillon "idée à explorer"</code></pre>
-    <em>Ce qu’on obtient :</em> une issue étiquetée <code>taille-N</code> et <code>prête</code>, ou <code>à-préciser</code> si une décision manque (la question est écrite dans « Questions ouvertes » : on y répond, puis on relance <code>/vagues:preparer-issue #N</code>). Au-delà de 4 points, l’idée est scindée en plusieurs issues liées. La commande ne pose jamais <code>vague-N</code>. <strong>Les issues déjà ouvertes n’ont pas <code>prête</code> : c’est voulu</strong>, elles passent d’abord par <code>/vagues:preparer-issue #N</code>.
+    <pre><code>/kalmia:preparer-issue "ajouter une option --sec au script de release"
+/kalmia:preparer-issue #12
+/kalmia:preparer-issue brouillon "idée à explorer"</code></pre>
+    <em>Ce qu’on obtient :</em> une issue étiquetée <code>taille-N</code> et <code>prête</code>, ou <code>à-préciser</code> si une décision manque (la question est écrite dans « Questions ouvertes » : on y répond, puis on relance <code>/kalmia:preparer-issue #N</code>). Au-delà de 4 points, l’idée est scindée en plusieurs issues liées. La commande ne pose jamais <code>vague-N</code>. <strong>Les issues déjà ouvertes n’ont pas <code>prête</code> : c’est voulu</strong>, elles passent d’abord par <code>/kalmia:preparer-issue #N</code>.
   </li>
-  <li><b>2. <code>/vagues:planifier</code> : former les vagues</b>
+  <li><b>2. <code>/kalmia:planifier</code> : former les vagues</b>
     Lit le journal, ajuste le budget de points, redécoupe les issues bloquées, pose les étiquettes <code>vague-N</code> et <code>taille-*</code>.
-    <pre><code>/vagues:planifier
-/vagues:planifier 3
-/vagues:planifier lecture-seule</code></pre>
+    <pre><code>/kalmia:planifier
+/kalmia:planifier 3
+/kalmia:planifier lecture-seule</code></pre>
     <em>Ce qu’on obtient :</em> un résumé court (budget ancien → nouveau, contenu de chaque vague en points, issues redécoupées, issues en attente). Deux vagues par défaut ; un nombre en argument en forme davantage. Avec <code>lecture-seule</code>, tout est calculé et affiché, mais rien n’est écrit.
   </li>
-  <li><b>3. <code>/vagues:vague N</code> : lancer une vague</b>
+  <li><b>3. <code>/kalmia:vague N</code> : lancer une vague</b>
     Un sous-agent (Sonnet) implémente chaque issue <code>prête</code> (trois en parallèle au plus ; une issue sans <code>prête</code> est notée « bloquée : non préparée » et aucun sous-agent n’est lancé pour elle), un autre révise chaque PR, puis la session principale fusionne ce qui est vert et approuvé.
-    <pre><code>/vagues:vague 3</code></pre>
+    <pre><code>/kalmia:vague 3</code></pre>
     <em>Ce qu’on obtient :</em> un résumé final.
     <pre><code>Vague 3 — 8/10 points
 Fusionnées : #81 (issue #70), …
 Ouvertes : #82 — CI absente, …
 Bloquées : #71 — dépend de #70, …</code></pre>
   </li>
-  <li><b>4. <code>/vagues:vague reprise</code> : reprendre une vague coupée</b>
+  <li><b>4. <code>/kalmia:vague reprise</code> : reprendre une vague coupée</b>
     Pour une vague interrompue (limite d’utilisation atteinte, session fermée).
-    <pre><code>/vagues:vague reprise</code></pre>
+    <pre><code>/kalmia:vague reprise</code></pre>
     <em>Ce qu’on obtient :</em> soit <code>Rien à reprendre</code> (aucune vague non fermée : aucun appel GitHub, aucun sous-agent, presque aucun coût), soit la reprise là où la vague en était, l’état de chaque issue étant relu sur GitHub. Si la vague a écrit une ligne au journal il y a moins de 90 minutes, la commande s’arrête : une autre session y travaille sans doute.
   </li>
-  <li><b>5. <code>/vagues:release</code> : clore une release</b>
+  <li><b>5. <code>/kalmia:release</code> : clore une release</b>
     On donne le tag puis les numéros de vague. Tests complets, audit, une PR de nettoyage pour les retouches sûres, des issues pour les refactorisations lourdes, notes de version et tag.
-    <pre><code>/vagues:release v0.3 3 4
-/vagues:release v0.1 1 2 depuis=2026-10-01</code></pre>
+    <pre><code>/kalmia:release v0.3 3 4
+/kalmia:release v0.1 1 2 depuis=2026-10-01</code></pre>
     <em>Ce qu’on obtient :</em> un tag annoté <code>vX.Y</code> sur le commit testé, mais <strong>seulement si tout est vert</strong>. Une vague qui a encore une issue ou une PR ouverte, des tests en échec ou une PR de nettoyage non fusionnée arrêtent la release sans tag. Relancer la commande reprend où elle s’était arrêtée ; un tag déjà créé donne <code>Release &lt;tag&gt; déjà taguée</code>.
   </li>
 </ol>
@@ -125,28 +125,28 @@ Bloquées : #71 — dépend de #70, …</code></pre>
 <p>L’<strong>orchestrateur</strong> est la session principale : il coordonne et ne code pas. Les sous-agents travaillent dans leur coin et ne lui rendent qu’<strong>une ligne</strong>, ce qui garde son contexte léger.</p>
 
 <div class="carte">
-  <h3><code>/vagues:preparer-issue</code></h3>
+  <h3><code>/kalmia:preparer-issue</code></h3>
   <p><span class="modele">Opus</span> Écrit ou enrichit les issues (voir l’étape 1 du cycle). N’implémente rien, ne crée ni branche ni PR.</p>
 </div>
 <div class="carte">
   <h3>Orchestrateur (session principale)</h3>
-  <p><span class="modele">modèle de ta session</span> Exécute <code>/vagues:vague</code> : lance les sous-agents, lit la CI, fusionne, écrit le journal. C’est le seul à fusionner. <code>/vagues:planifier</code> demande le modèle <code>opus</code> ; <code>/vagues:release</code>, le modèle <code>fable</code>.</p>
+  <p><span class="modele">modèle de ta session</span> Exécute <code>/kalmia:vague</code> : lance les sous-agents, lit la CI, fusionne, écrit le journal. C’est le seul à fusionner. <code>/kalmia:planifier</code> demande le modèle <code>opus</code> ; <code>/kalmia:release</code>, le modèle <code>fable</code>.</p>
 </div>
 <div class="carte">
-  <h3><code>vagues:implementeur</code></h3>
+  <h3><code>kalmia:implementeur</code></h3>
   <p><span class="modele">Sonnet</span> Reçoit un numéro d’issue : branche, code, tests, push, PR. Suit le plan d’implémentation de l’issue ; si une étape est impossible ou ambiguë, il répond <code>bloqué</code> sans deviner. Ne fusionne ni n’approuve.</p>
   <pre><code>#69 → https://github.com/<i>o</i>/<i>r</i>/pull/80 | réussi
 #70 → — | bloqué | dépend de #69, non fusionnée</code></pre>
 </div>
 <div class="carte">
-  <h3><code>vagues:reviseur</code></h3>
+  <h3><code>kalmia:reviseur</code></h3>
   <p><span class="modele">Sonnet</span> Reçoit une PR et son issue, vérifie les critères contre le diff, en lecture seule, et laisse un commentaire avec un marqueur de verdict lié au SHA du dernier commit.</p>
   <pre><code>PR #80 | approuvé
 PR #81 | refusé | <i>raison principale</i></code></pre>
 </div>
 <div class="carte">
-  <h3><code>vagues:release-mecanique</code></h3>
-  <p><span class="modele">Sonnet</span> Les tâches mécaniques de <code>/vagues:release</code> : <code>tests</code>, <code>notes</code> et <code>tag</code>, par le script <code>scripts/release.py</code>. Il ne décide rien et ne modifie aucun code.</p>
+  <h3><code>kalmia:release-mecanique</code></h3>
+  <p><span class="modele">Sonnet</span> Les tâches mécaniques de <code>/kalmia:release</code> : <code>tests</code>, <code>notes</code> et <code>tag</code>, par le script <code>scripts/release.py</code>. Il ne décide rien et ne modifie aucun code.</p>
 </div>
 <p class="note">Les agents sont lancés par les commandes ; ils ne sont pas faits pour un usage interactif.</p>
 </section>
@@ -155,18 +155,18 @@ PR #81 | refusé | <i>raison principale</i></code></pre>
 <h2>3. Règles de planification</h2>
 <ul>
   <li><strong>Tailles 1, 2, 4</strong> : petite = 1 point, moyenne = 2, grosse = 4, posées en étiquettes <code>taille-1</code>, <code>taille-2</code>, <code>taille-4</code>. Au-delà de 4, on scinde l’issue.</li>
-  <li><strong>Budget par vague</strong> : 10 points au départ ; <code>/vagues:planifier</code> l’ajuste (entre 4 et 20) selon les vagues coupées et l’utilisation. La somme des tailles d’une vague ne dépasse pas le budget ; une issue seule plus grosse forme sa propre vague.</li>
-  <li><strong>Issue préparée</strong> : <code>prête</code> = toutes les sections du modèle remplies et aucune question ouverte ; <code>à-préciser</code> = une décision manque. <code>/vagues:vague</code> ne lance l’implémenteur que sur une issue <code>prête</code>.</li>
+  <li><strong>Budget par vague</strong> : 10 points au départ ; <code>/kalmia:planifier</code> l’ajuste (entre 4 et 50) selon les vagues coupées et l’utilisation. La somme des tailles d’une vague ne dépasse pas le budget ; une issue seule plus grosse forme sa propre vague.</li>
+  <li><strong>Issue préparée</strong> : <code>prête</code> = toutes les sections du modèle remplies et aucune question ouverte ; <code>à-préciser</code> = une décision manque. <code>/kalmia:vague</code> ne lance l’implémenteur que sur une issue <code>prête</code>.</li>
   <li><strong>Fichiers distincts</strong> : deux issues d’une même vague ne touchent pas les mêmes fichiers (section « Fichiers probablement touchés » du modèle d’issue).</li>
   <li><strong>Dépendances</strong> : une issue qui dépend d’une autre va dans une vague suivante.</li>
 </ul>
 
 <h3>Le journal <code>.claude/journal-vagues.md</code></h3>
-<p>C’est la mémoire des vagues, dans le projet. Le <strong>budget courant</strong> (ligne <code>budget:</code> des réglages) n’est noté qu’à cet endroit. <code>/vagues:vague</code> y ajoute une ligne par événement, directement sur <code>main</code>, sans PR :</p>
+<p>C’est la mémoire des vagues, dans le projet. Le <strong>budget courant</strong> (ligne <code>budget:</code> des réglages) n’est noté qu’à cet endroit. <code>/kalmia:vague</code> y ajoute une ligne par événement, directement sur <code>main</code>, sans PR :</p>
 <pre><code>- 2026-11-18T14:05Z | vague 3 | ouverte | prévus 8
 - 2026-11-18T14:40Z | vague 3 | issue #70 | taille 2 | fusionnée | PR #81
 - 2026-11-18T16:10Z | vague 3 | fermée | complétés 8/8 | utilisation: __ %</code></pre>
-<div class="note"><strong>À remplir par toi (facultatif).</strong> À la fin d’une vague, remplace le <code>__</code> de <code>utilisation: __ %</code> par le pourcentage d’utilisation affiché dans l’app Claude. <code>/vagues:planifier</code> s’en sert pour ajuster le budget. Ne modifie pas les autres lignes.</div>
+<div class="note"><strong>À remplir par toi (facultatif).</strong> À la fin d’une vague, remplace le <code>__</code> de <code>utilisation: __ %</code> par le pourcentage d’utilisation affiché dans l’app Claude. <code>/kalmia:planifier</code> s’en sert pour ajuster le budget. Ne modifie pas les autres lignes.</div>
 </section>
 
 <section id="garde-fous">
@@ -202,19 +202,19 @@ PR #81 | refusé | <i>raison principale</i></code></pre>
   <li><strong>Horaire</strong> : toutes les 3 heures, par exemple <code>0 */3 * * *</code> (UTC) ; <code>0 */2 * * *</code> pour toutes les 2 heures.</li>
   <li><strong>Prompt</strong> :</li>
 </ul>
-<pre><code>/vagues:vague reprise</code></pre>
+<pre><code>/kalmia:vague reprise</code></pre>
 <p>Sans vague coupée, la réponse est <code>Rien à reprendre</code>, presque sans coût.</p>
 
 <h3>Autres étapes</h3>
 <ul>
-  <li><strong>Étiquettes</strong> : <code>/vagues:installer-vagues</code> crée <code>taille-1</code>, <code>taille-2</code> et <code>taille-4</code> si elle a accès à GitHub ; sinon elle les liste « à créer ». Elle crée aussi <code>prête</code> et <code>à-préciser</code> (posées par <code>/vagues:preparer-issue</code>). Les étiquettes <code>vague-N</code> sont posées par <code>/vagues:planifier</code>.</li>
+  <li><strong>Étiquettes</strong> : <code>/kalmia:installer-vagues</code> crée <code>taille-1</code>, <code>taille-2</code> et <code>taille-4</code> si elle a accès à GitHub ; sinon elle les liste « à créer ». Elle crée aussi <code>prête</code> et <code>à-préciser</code> (posées par <code>/kalmia:preparer-issue</code>). Les étiquettes <code>vague-N</code> sont posées par <code>/kalmia:planifier</code>.</li>
   <li><strong>Accès réseau à GitHub</strong> dans l’environnement cloud : sans lui, le marketplace ne se charge pas.</li>
   <li><strong>Après l’ajout du plugin</strong> : <code>/reload-skills</code>, ou une nouvelle session.</li>
   <li><strong>Protection de <code>main</code></strong> : le plugin n’en suppose aucune ; le garde de fusion en tient lieu. Si ton projet en a une, c’est à toi de la régler.</li>
 </ul>
 
 <h3>Installation du plugin en session cloud</h3>
-<div class="attention">En session cloud, Claude Code n’installe pas tout seul le marketplace et le plugin déclarés dans <code>.claude/settings.json</code> (il n’y a pas d’invite de confiance dans ces sessions). Ce qui fonctionne : installer à la main, ou mettre l’installation dans le <strong>script d’installation de l’environnement</strong>. Les commandes exactes sont dans le README, au troisième point connu des sessions cloud. Une fois installé, <code>claude plugin list</code> doit montrer <code>vagues@outils-claude</code> à l’état <code>enabled</code>.</div>
+<div class="attention">En session cloud, Claude Code n’installe pas tout seul le marketplace et le plugin déclarés dans <code>.claude/settings.json</code> (il n’y a pas d’invite de confiance dans ces sessions). Ce qui fonctionne : installer à la main, ou mettre l’installation dans le <strong>script d’installation de l’environnement</strong>. Les commandes exactes sont dans le README, au troisième point connu des sessions cloud. Une fois installé, <code>claude plugin list</code> doit montrer <code>kalmia@outils-claude</code> à l’état <code>enabled</code>.</div>
 <p>Voir « Trois points connus des sessions cloud » dans le <a href="../README.md#trois-points-connus-des-sessions-cloud-claude-code-sur-le-web">README</a>.</p>
 </section>
 
@@ -222,12 +222,12 @@ PR #81 | refusé | <i>raison principale</i></code></pre>
 <h2>6. Installer dans un nouveau projet</h2>
 <ol class="etapes">
   <li><b>1. Copier le bloc de <code>.claude/settings.json</code> du README</b>
-    Il déclare le marketplace <code>outils-claude</code> (avec <code>autoUpdate: true</code>, nécessaire pour recevoir les modifications du plugin) et active <code>vagues@outils-claude</code>. Le créer s’il n’existe pas ; sinon, <strong>fusionner</strong> ses clés avec celles du fichier. Le bloc est dans le <a href="../README.md#installer-dans-un-projet">README</a>.
+    Il déclare le marketplace <code>outils-claude</code> (avec <code>autoUpdate: true</code>, nécessaire pour recevoir les modifications du plugin) et active <code>kalmia@outils-claude</code>. Le créer s’il n’existe pas ; sinon, <strong>fusionner</strong> ses clés avec celles du fichier. Le bloc est dans le <a href="../README.md#installer-dans-un-projet">README</a>.
   </li>
-  <li><b>2. Ouvrir une nouvelle session, puis lancer <code>/vagues:installer-vagues</code></b>
-    Accepter le marketplace et le plugin si Claude Code le demande. La commande crée le modèle d’issue, le journal, la section « Règles de planification » de <code>CLAUDE.md</code>, les commandes de vérification et les étiquettes <code>taille-*</code>. Elle n’écrase rien et peut être relancée. Pour imposer la commande de vérification rapide : <code>/vagues:installer-vagues "&lt;commande&gt;"</code>.
+  <li><b>2. Ouvrir une nouvelle session, puis lancer <code>/kalmia:installer-vagues</code></b>
+    Accepter le marketplace et le plugin si Claude Code le demande. La commande crée le modèle d’issue, le journal, la section « Règles de planification » de <code>CLAUDE.md</code>, les commandes de vérification et les étiquettes <code>taille-*</code>. Elle n’écrase rien et peut être relancée. Pour imposer la commande de vérification rapide : <code>/kalmia:installer-vagues "&lt;commande&gt;"</code>.
   </li>
-  <li><b>3. Relire et commiter, puis <code>/vagues:planifier</code> et <code>/vagues:vague 1</code></b>
+  <li><b>3. Relire et commiter, puis <code>/kalmia:planifier</code> et <code>/kalmia:vague 1</code></b>
     La commande ne commite rien : tu relis les fichiers créés avant.
   </li>
 </ol>
@@ -239,7 +239,7 @@ PR #81 | refusé | <i>raison principale</i></code></pre>
 
 <details>
 <summary>Une vague a été coupée</summary>
-<p>Lance <code>/vagues:vague reprise</code> (ou <code>/vagues:vague N</code>) : la commande marque la vague <code>coupée</code>, puis la reprend en relisant l’état de chaque issue sur GitHub ; les issues terminées sont sautées. Si elle répond <code>Vague N en cours (dernière ligne …)</code>, une autre session y a écrit il y a moins de 90 minutes : attends. Pour ne plus y penser, crée la tâche planifiée de la section 5.</p>
+<p>Lance <code>/kalmia:vague reprise</code> (ou <code>/kalmia:vague N</code>) : la commande marque la vague <code>coupée</code>, puis la reprend en relisant l’état de chaque issue sur GitHub ; les issues terminées sont sautées. Si elle répond <code>Vague N en cours (dernière ligne …)</code>, une autre session y a écrit il y a moins de 90 minutes : attends. Pour ne plus y penser, crée la tâche planifiée de la section 5.</p>
 </details>
 
 <details>
@@ -261,7 +261,7 @@ PR #81 | refusé | <i>raison principale</i></code></pre>
 </details>
 
 <details>
-<summary>Les commandes <code>/vagues:…</code> n’existent pas</summary>
+<summary>Les commandes <code>/kalmia:…</code> n’existent pas</summary>
 <ul>
   <li>Plugin récemment ajouté : <code>/reload-skills</code>, ou une nouvelle session.</li>
   <li>Session cloud : l’installation automatique ne se fait pas (section 5). Vérifie avec <code>claude plugin list</code> ; au besoin, installe avec les deux commandes <code>claude plugin marketplace add</code> et <code>claude plugin install</code>, ou ajoute-les au script d’installation de l’environnement.</li>

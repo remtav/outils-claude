@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Contrôle de fin de l'agent implementeur (hooks/hooks.json du plugin vagues).
+"""Contrôle de fin de l'agent implementeur (hooks/hooks.json du plugin kalmia).
 
 Repris de remtav/template (#73), rendu générique (#72) :
 - `start` (SubagentStart) : instantané de l'arbre de travail au départ.
@@ -18,7 +18,7 @@ Arbre contrôlé : racine git du `cwd` de l'événement (l'implémenteur est lan
 `isolation: "worktree"`, son arbre n'est donc pas $CLAUDE_PROJECT_DIR), sinon
 $CLAUDE_PROJECT_DIR, sinon le dossier courant.
 Abandon après 3 blocages : laisse finir et demande de répondre `partiel` ou `bloqué`.
-Ignore les autres agents (accepte `implementeur` et `vagues:implementeur`) et ne
+Ignore les autres agents (accepte `implementeur` et `kalmia:implementeur`) et ne
 fait rien sans instantané. Désactivation temporaire : HOOKS_QUALITE_DESACTIVES
 contient `implementeur-stop-check` ou `tous`.
 """
@@ -32,7 +32,7 @@ sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 import etat_arbre  # noqa: E402  (instantané d'arbre et état, à côté de ce script)
 
 NOM = "implementeur-stop-check"
-AGENTS = ("implementeur", "vagues:implementeur")
+AGENTS = ("implementeur", "kalmia:implementeur")
 MAX_BLOCKS = 3
 PROTECTED = ("main", "master")
 CONFIG = os.path.join(".claude", "verification-implementeur")
@@ -92,7 +92,7 @@ def probleme_verif(project_dir):
     cmd = commande_verif(project_dir)
     if not cmd:
         return (f"aucune commande de vérification configurée : écris-la sur la première ligne de {CONFIG} "
-                "dans le projet (ou lance /vagues:installer-vagues), ou définis VERIFICATION_IMPLEMENTEUR.")
+                "dans le projet (ou lance /kalmia:installer-vagues), ou définis VERIFICATION_IMPLEMENTEUR.")
     try:
         proc = subprocess.run(cmd, shell=True, cwd=project_dir, capture_output=True, text=True, timeout=TIMEOUT)
     except subprocess.TimeoutExpired:

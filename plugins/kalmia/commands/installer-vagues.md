@@ -1,5 +1,5 @@
 ---
-description: Prépare le projet courant pour la mécanique des vagues (plugin vagues) - modèle d'issue, journal, règles de planification dans CLAUDE.md, commandes de vérification, étiquettes taille-*, prête et à-préciser. Idempotent - n'écrase jamais un fichier existant. Argument facultatif - la commande de vérification rapide.
+description: Prépare le projet courant pour la mécanique des vagues (plugin kalmia) - modèle d'issue, journal, règles de planification dans CLAUDE.md, commandes de vérification, étiquettes taille-*, prête et à-préciser. Idempotent - n'écrase jamais un fichier existant. Argument facultatif - la commande de vérification rapide.
 argument-hint: "[commande de vérification]"
 ---
 
@@ -18,7 +18,7 @@ Détermine deux commandes, dans cet ordre de priorité :
   2. sinon la première ligne utile d'un `.claude/verification-implementeur` existant ;
   3. sinon déduite du projet : `package.json` (scripts `lint`, `test:unit`, `test:node`, `test`, ex. `npm run lint && npm test`), `pyproject.toml` / `setup.cfg` / `pytest.ini` (`python3 -m pytest -q`), `Makefile` (cible `test` ou `check`), `Cargo.toml` (`cargo test`), `go.mod` (`go test ./...`) ;
   4. sinon, demande-la à l'utilisateur (une question, avec ta meilleure proposition). S'il n'y en a vraiment aucune, utilise `true` et signale-le dans le résumé.
-- **Suite complète** (lancée par `/vagues:release` avant un tag) : la première ligne utile d'un `.claude/tests-complets` existant, sinon la suite complète déduite du projet (ex. `npm ci && npm test`), sinon la vérification rapide.
+- **Suite complète** (lancée par `/kalmia:release` avant un tag) : la première ligne utile d'un `.claude/tests-complets` existant, sinon la suite complète déduite du projet (ex. `npm ci && npm test`), sinon la vérification rapide.
 
 ## 2. Fichiers à créer s'ils manquent
 
@@ -39,7 +39,7 @@ Pour chacun : s'il existe, « déjà en place » ; sinon, lis le modèle (`${CLA
 
 ## 4. Étiquettes
 
-Crée les étiquettes `taille-1`, `taille-2`, `taille-4`, `prête` (issue préparée par `/vagues:preparer-issue`, lancée par `/vagues:vague`) et `à-préciser` (issue qui attend une décision) si elles n'existent pas (dépôt `owner/repo` d'après `git remote get-url origin`) : outils MCP GitHub s'il y en a un pour les étiquettes, sinon `gh label create taille-1 --description "1 point" --force` (de même pour 2 et 4 ; `prête` : `--description "Issue préparée, prête pour une vague"`, `à-préciser` : `--description "Décision manquante, voir Questions ouvertes"`) si `gh` est disponible et authentifié. Si aucun accès ne le permet, ne bloque pas : liste-les « à créer » dans le résumé. Dis aussi que les issues déjà ouvertes n'ont pas `prête` : elles passent par `/vagues:preparer-issue #N` avant `/vagues:vague`. Les étiquettes `vague-N` sont créées plus tard par `/vagues:planifier`.
+Crée les étiquettes `taille-1`, `taille-2`, `taille-4`, `prête` (issue préparée par `/kalmia:preparer-issue`, lancée par `/kalmia:vague`) et `à-préciser` (issue qui attend une décision) si elles n'existent pas (dépôt `owner/repo` d'après `git remote get-url origin`) : outils MCP GitHub s'il y en a un pour les étiquettes, sinon `gh label create taille-1 --description "1 point" --force` (de même pour 2 et 4 ; `prête` : `--description "Issue préparée, prête pour une vague"`, `à-préciser` : `--description "Décision manquante, voir Questions ouvertes"`) si `gh` est disponible et authentifié. Si aucun accès ne le permet, ne bloque pas : liste-les « à créer » dans le résumé. Dis aussi que les issues déjà ouvertes n'ont pas `prête` : elles passent par `/kalmia:preparer-issue #N` avant `/kalmia:vague`. Les étiquettes `vague-N` sont créées plus tard par `/kalmia:planifier`.
 
 ## 5. Résumé (court)
 
@@ -50,7 +50,7 @@ Déjà en place : <fichiers>
 CLAUDE.md : section ajoutée|créé|déjà en place
 Vérification : <commande rapide> ; suite complète : <commande>
 Étiquettes : créées|déjà là|à créer : taille-1, taille-2, taille-4, prête, à-préciser
-Prochaine étape : relire et commiter ces fichiers, puis /vagues:preparer-issue #N (issues existantes), /vagues:planifier, puis /vagues:vague 1
+Prochaine étape : relire et commiter ces fichiers, puis /kalmia:preparer-issue #N (issues existantes), /kalmia:planifier, puis /kalmia:vague 1
 ```
 
 Ajoute une ligne `À vérifier :` si une commande a été devinée ou vaut `true`.

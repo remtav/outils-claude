@@ -8,9 +8,9 @@
   },
   "plugins": [
     {
-      "name": "vagues",
-      "source": "./plugins/vagues",
-      "description": "Mécanique des vagues : agents implementeur et reviseur, commandes /vagues:vague, /vagues:planifier, /vagues:release et /vagues:installer-vagues, garde-fous et contrôle de fin."
+      "name": "kalmia",
+      "source": "./plugins/kalmia",
+      "description": "Mécanique des vagues : agents implementeur et reviseur, commandes /kalmia:vague, /kalmia:planifier, /kalmia:release et /kalmia:installer-vagues, garde-fous et contrôle de fin."
     }
   ]
 }

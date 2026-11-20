@@ -2,7 +2,7 @@
 
 Lancer : python3 -m unittest discover -s tests/plugin -v
 Vérifie : HTML bien formé, sept sections, trois étapes dans « Installer dans un nouveau projet »,
-aucune ressource externe, et que chaque commande /vagues:… et chaque agent vagues:… cités existent.
+aucune ressource externe, et que chaque commande /kalmia:… et chaque agent kalmia:… cités existent.
 """
 import os
 import re
@@ -11,7 +11,7 @@ from html.parser import HTMLParser
 
 ROOT = os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 GUIDE = os.path.join(ROOT, "docs", "guide-vagues.html")
-PLUGIN = os.path.join(ROOT, "plugins", "vagues")
+PLUGIN = os.path.join(ROOT, "plugins", "kalmia")
 VOID = {"meta", "br", "img", "link", "hr", "input"}
 
 
@@ -77,17 +77,17 @@ class Guide(unittest.TestCase):
         self.assertNotIn("url(", self.texte)
 
     def test_guide_decrit_preparer_puis_vague(self):
-        self.assertIn("/vagues:preparer-issue", self.texte)
+        self.assertIn("/kalmia:preparer-issue", self.texte)
         for mot in ("Opus", "Sonnet", "<code>prête</code>", "<code>à-préciser</code>"):
             self.assertIn(mot, self.texte)
 
     def test_commandes_et_agents_existent(self):
         commandes = {f[:-3] for f in os.listdir(os.path.join(PLUGIN, "commands")) if f.endswith(".md")}
         agents = {f[:-3] for f in os.listdir(os.path.join(PLUGIN, "agents")) if f.endswith(".md")}
-        cites_c = set(re.findall(r"/vagues:([a-z-]+)", self.texte))
+        cites_c = set(re.findall(r"/kalmia:([a-z-]+)", self.texte))
         self.assertTrue(cites_c)
         self.assertLessEqual(cites_c - commandes, set())
-        for nom in re.findall(r"<code>vagues:([a-z-]+)</code>", self.texte):
+        for nom in re.findall(r"<code>kalmia:([a-z-]+)</code>", self.texte):
             if nom not in commandes:
                 self.assertIn(nom, agents)
 

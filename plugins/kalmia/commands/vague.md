@@ -1,5 +1,5 @@
 ---
-description: Orchestre une vague d'issues (étiquette vague-N) avec les sous-agents vagues:implementeur et vagues:reviseur ; fusionne seulement si la CI a réussi et que le réviseur approuve. Argument : un numéro de vague (3 ou vague-3) ou « reprise ».
+description: Orchestre une vague d'issues (étiquette vague-N) avec les sous-agents kalmia:implementeur et kalmia:reviseur ; fusionne seulement si la CI a réussi et que le réviseur approuve. Argument : un numéro de vague (3 ou vague-3) ou « reprise ».
 argument-hint: <N | vague-N | reprise>
 ---
 
@@ -14,7 +14,7 @@ Accès GitHub : outils MCP GitHub (`mcp__github__*`) ; `gh` en alternative s'il 
   - **Fichier absent ou aucune vague non fermée : réponds exactement `Rien à reprendre` et arrête-toi**, sans aucun autre appel (ni GitHub, ni sous-agent, ni écriture).
   - **Vague encore active** : si la dernière ligne de cette vague (tous événements confondus) date de **moins de 90 minutes** (`date -u`), une autre session y travaille probablement : réponds `Vague N en cours (dernière ligne <heure>) : rien à reprendre` et arrête-toi, sans aucun autre appel.
   - Sinon, lis-y le numéro de vague `N` et continue avec `vague-N` : l'étape 1 la marque `coupée` puis `reprise`.
-- Autre chose ou rien → réponds `Usage : /vagues:vague <N | vague-N | reprise>` et arrête-toi.
+- Autre chose ou rien → réponds `Usage : /kalmia:vague <N | vague-N | reprise>` et arrête-toi.
 
 ## 1. État de la vague (idempotence)
 
@@ -27,9 +27,9 @@ Liste les issues étiquetées `vague-N` (`mcp__github__list_issues` avec `labels
 | PR ouverte liée (corps contenant `Closes #<issue>`, `Fixes #<issue>` ou `Resolves #<issue>`, le numéro suivi d'une **limite de mot** : `Closes #6` ne désigne pas l'issue 69 ; motif : `(?i)\b(close[sd]?\|fix(e[sd])?\|resolve[sd]?) #<issue>\b`) | passer directement à l'étape 3 (CI + révision) |
 | aucune PR | étape 2 (implémentation) |
 
-**Garde « prête ».** Une issue ouverte de la vague **sans** l'étiquette `prête` n'est jamais confiée à l'implémenteur (une issue qui a déjà une PR ouverte suit sa ligne du tableau). Elle est **bloquée** avec la raison `non préparée (lancer /vagues:preparer-issue #N)` : écris-la au journal (ligne `issue #I | taille T | bloquée | — | non préparée (lancer /vagues:preparer-issue #I)`) et mets-la dans « Bloquées » du résumé. **Aucun sous-agent n'est lancé pour elle.** Les issues déjà ouvertes avant l'introduction de `/vagues:preparer-issue` n'ont pas `prête` : c'est voulu, elles passent d'abord par `/vagues:preparer-issue #N`. Une issue `à-préciser` est dans le même cas (ses « Questions ouvertes » attendent une décision).
+**Garde « prête ».** Une issue ouverte de la vague **sans** l'étiquette `prête` n'est jamais confiée à l'implémenteur (une issue qui a déjà une PR ouverte suit sa ligne du tableau). Elle est **bloquée** avec la raison `non préparée (lancer /kalmia:preparer-issue #N)` : écris-la au journal (ligne `issue #I | taille T | bloquée | — | non préparée (lancer /kalmia:preparer-issue #I)`) et mets-la dans « Bloquées » du résumé. **Aucun sous-agent n'est lancé pour elle.** Les issues déjà ouvertes avant l'introduction de `/kalmia:preparer-issue` n'ont pas `prête` : c'est voulu, elles passent d'abord par `/kalmia:preparer-issue #N`. Une issue `à-préciser` est dans le même cas (ses « Questions ouvertes » attendent une décision).
 
-Relancer `/vagues:vague N` sur une vague partiellement faite reprend donc là où elle en était, sans refaire les issues terminées.
+Relancer `/kalmia:vague N` sur une vague partiellement faite reprend donc là où elle en était, sans refaire les issues terminées.
 
 Lis aussi la taille de chaque issue dans ses étiquettes `taille-1`, `taille-2`, `taille-4` (1, 2 ou 4 points ; sans étiquette : 0, et le signaler) : **points prévus** = somme sur toutes les issues de la vague.
 
@@ -37,11 +37,11 @@ Lis enfin le **budget** dans les réglages du journal (ligne `budget:`, seul end
 
 **Journal** (voir « Écrire une ligne au journal » plus bas) :
 1. Pour chaque vague **non fermée** du journal (définition à l'étape 0), y compris `N`, dont la dernière ligne d'état n'est pas déjà `coupée` : écris `coupée | complétés C/P`, avec `P` et `C` calculés pour cette vague-là comme ici et à l'étape 5 (issues de son étiquette `vague-M`).
-2. Puis, pour `N` : `reprise | prévus P` si `N` était non fermée (cas de `/vagues:vague reprise`, ou d'un `/vagues:vague N` relancé sur une vague coupée), sinon `ouverte | prévus P`.
+2. Puis, pour `N` : `reprise | prévus P` si `N` était non fermée (cas de `/kalmia:vague reprise`, ou d'un `/kalmia:vague N` relancé sur une vague coupée), sinon `ouverte | prévus P`.
 
 ## 2. Implémentation
 
-Pour chaque issue à implémenter (étiquette `prête`, sans PR), lance un sous-agent `implementeur` du plugin (outil Agent, `subagent_type: "vagues:implementeur"`, **`isolation: "worktree"`**) avec ce message, **et rien d'autre** :
+Pour chaque issue à implémenter (étiquette `prête`, sans PR), lance un sous-agent `implementeur` du plugin (outil Agent, `subagent_type: "kalmia:implementeur"`, **`isolation: "worktree"`**) avec ce message, **et rien d'autre** :
 
 ```
 Issue #<numéro>. Réponds en une seule ligne au format de ta définition.
@@ -62,7 +62,7 @@ Pour chaque PR (nouvelle ou déjà ouverte) :
    - **réussie** : toutes les vérifications terminées et vertes ;
    - **échouée** : au moins une rouge ou annulée → la PR reste ouverte ;
    - **absente** : aucune vérification configurée pour cette PR (cas fréquent : le workflow ne se déclenche que sur certains chemins). Note-le. **Règle par défaut : une PR à CI absente n'est pas fusionnée**, même si l'implémenteur rapporte ses tests locaux réussis ; elle reste ouverte avec la raison « CI absente ». Cette commande ne contient aucune règle qui autorise la fusion sans CI.
-2. **Révision.** Lance un sous-agent `reviseur` du plugin (`subagent_type: "vagues:reviseur"`), **nouveau pour chaque PR**, avec ce message et rien d'autre (ni résumé de l'implémentation, ni ton avis) :
+2. **Révision.** Lance un sous-agent `reviseur` du plugin (`subagent_type: "kalmia:reviseur"`), **nouveau pour chaque PR**, avec ce message et rien d'autre (ni résumé de l'implémentation, ni ton avis) :
 
    ```
    PR #<pr>, issue #<issue>. Réponds en une seule ligne au format de ta définition.
@@ -97,7 +97,7 @@ Ajoute au résumé, s'il y a lieu : `Prévus P > budget B`, et `Journal non écr
 1. pour chaque PR de la vague restée ouverte : `issue #I | taille T | ouverte | PR #n | <raison>` (CI échouée, CI absente, CI en attente, refusée par le réviseur, refusée par le garde de fusion, conflit après fusion) ;
 2. puis la ligne de fermeture : `fermée | complétés C/P | utilisation: __ %`. Laisse `__` tel quel : l'utilisateur y note le pourcentage d'utilisation affiché dans l'app Claude. Termine le résumé par `Journal : note l'utilisation dans .claude/journal-vagues.md (facultatif).`
 
-Si la session s'arrête avant cette étape (limite atteinte, session fermée), rien n'est écrit : la vague reste non fermée, et le prochain `/vagues:vague reprise` (ou `/vagues:vague N`) la marque `coupée`.
+Si la session s'arrête avant cette étape (limite atteinte, session fermée), rien n'est écrit : la vague reste non fermée, et le prochain `/kalmia:vague reprise` (ou `/kalmia:vague N`) la marque `coupée`.
 
 ## Écrire une ligne au journal
 
