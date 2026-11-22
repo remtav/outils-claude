@@ -36,6 +36,8 @@ Au format du modèle enrichi, sections dans cet ordre : Contexte, Fichiers proba
 
 Écris pour un lecteur plus petit que toi, qui n'a que ce texte : pas d'implicite, pas de « comme d'habitude ».
 
+**Captures d'écran** : ne les écris jamais comme critère d'acceptation obligatoire. Si une vérification visuelle est utile, formule-la comme facultative (« captures recommandées, non bloquantes ; sinon, noter dans la PR ce qui reste à regarder par une personne »), ou mets-la dans « Hors portée et pièges ». Un critère vérifiable par commande ou par test est préférable à une capture.
+
 **Taille** : estime 1, 2 ou 4 points. **Au-delà de 4, scinde** en plusieurs issues de 1 ou 2 points, liées par leurs « Dépendances » (`#n`), chacune complète.
 
 **Décision manquante** : ne la prends pas. Écris-la comme question dans « Questions ouvertes » (avec les options que tu vois et ta recommandation) et pose l'étiquette `à-préciser` à la place de `prête`.
