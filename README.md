@@ -66,7 +66,7 @@ Les commandes les lancent sous leur nom de plugin (`subagent_type: "kalmia:imple
 
 | Agent | Modèle | Rôle |
 |---|---|---|
-| `kalmia:implementeur` | Sonnet | Reçoit un numéro d'issue : branche, code, tests, push, PR ; répond en une ligne. Ne fusionne ni n'approuve. |
+| `kalmia:implementeur` | Sonnet | Reçoit un numéro d'issue : branche, code, tests, push, PR ; répond en une ligne. Recopie la définition de terminé commune du dépôt dans le corps de la PR (gabarit à trois blocs, relu avant de répondre), ne commite pas les fichiers générés hors portée, met sa branche à jour avec `main` avant de pousser. Ne fusionne ni n'approuve. |
 | `kalmia:reviseur` | Sonnet | Reçoit une PR et son issue : vérifie les critères contre le diff, poste un commentaire avec le marqueur `<!-- verdict-reviseur: approuvé\|refusé sha=… -->` ; lecture seule. |
 | `kalmia:release-mecanique` | Sonnet | Tâches mécaniques de `/kalmia:release` (tests, notes, tag) par `scripts/release.py`. |
 
