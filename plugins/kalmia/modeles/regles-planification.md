@@ -9,7 +9,9 @@ Mécanique des vagues fournie par le plugin `kalmia` (marketplace `outils-claude
 - **Priorité** : `/kalmia:planifier` classe les issues (priorité explicite, issues qui en débloquent d'autres, bugs avant fonctionnalités avant nettoyage, puis numéro) et remplit les vagues dans cet ordre, dans la limite du budget.
 - **Fichiers** : des issues qui touchent les mêmes fichiers (section « Fichiers probablement touchés » du modèle) peuvent être dans la même vague ; `/kalmia:vague` les exécute **l'une après l'autre** (chaîne), les autres en parallèle.
 - **Interaction humaine** : elle a lieu dans `/kalmia:planifier` (questions, décisions, validation du plan). Une fois les vagues formées, `/kalmia:vague` ne demande rien.
-- **Dépendances** : une issue qui dépend d'une autre va dans une vague postérieure à la sienne.
+- **Dépendances** : une issue qui dépend d'une autre va dans une vague postérieure à la sienne, et seulement une fois la dépendance **fusionnée** (une PR ouverte ne suffit pas : `/kalmia:vague` ne lance pas l'issue dépendante).
+- **Approbation humaine** : [`.claude/approbation-humaine`](.claude/approbation-humaine) liste les fichiers dont la modification exige l'approbation d'une personne avant fusion (source unique : la règle de fusion de ce fichier y renvoie). Les issues qui les touchent portent l'étiquette `approbation-humaine`, passent en fin de vague, et leur attente ne compte pas comme un échec. Les fichiers binaires qu'un implémenteur peut ajouter se déclarent dans [`.claude/binaires-autorises`](.claude/binaires-autorises) ; sinon le contrôle de fin les refuse.
+- **Journal** : toute raison de blocage commence par une catégorie (`humain :`, `dépendance :`, `refusée :`, `CI :`, `coupure :`, `externe :`) ; une ligne identique à la dernière de la même issue n'est pas réécrite.
 - **Fusion** : seulement si la CI a réussi **et** que le réviseur a approuvé le dernier commit (garde de fusion du plugin).
 
 **Commandes de vérification** (lues par les hooks du plugin, dans ce projet) :

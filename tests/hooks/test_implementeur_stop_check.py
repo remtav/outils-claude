@@ -134,6 +134,31 @@ class Controles(Base):
         git(self.project, "switch", "-q", "main")
         self.assert_blocked("handback", "main")
 
+    def commit_binaire(self, rel):
+        with open(os.path.join(self.project, rel), "wb") as f:
+            f.write(b"\x89PNG\x00\x01\x02\xff\x00")
+        git(self.project, "add", rel)
+        git(self.project, "commit", "-q", "-m", f"ajout {rel}")
+
+    def test_binaire_ajoute_bloque(self):
+        os.makedirs(os.path.join(self.project, "e2e", "captures"))
+        self.commit_binaire("e2e/captures/page.png")
+        self.push()
+        reason = self.assert_blocked("handback", "binaires", "e2e/captures/page.png")
+        self.assertIn("binaires-autorises", reason)
+
+    def test_binaire_autorise_passe(self):
+        os.makedirs(os.path.join(self.project, ".claude"))
+        self.commit(".claude/binaires-autorises", "# captures demandées par l'issue\ne2e/captures/*.png\n")
+        os.makedirs(os.path.join(self.project, "e2e", "captures"))
+        self.commit_binaire("e2e/captures/page.png")
+        self.push()
+        self.assert_passes("handback")
+
+    def test_texte_ajoute_ne_bloque_pas(self):
+        self.travail_fini()
+        self.assert_passes("handback")
+
     def test_branche_non_poussee(self):
         self.commit("a.txt", "a\n")
         self.assert_blocked("handback", "poussée")
