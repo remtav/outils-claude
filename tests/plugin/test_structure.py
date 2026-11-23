@@ -240,3 +240,21 @@ class AucuneDonneeDeProjet(unittest.TestCase):
 
 if __name__ == "__main__":
     unittest.main()
+
+
+class AccesWeb(unittest.TestCase):
+    def outils(self, agent):
+        with open(os.path.join(PLUGIN, "agents", agent + ".md"), encoding="utf-8") as f:
+            ligne = next(l for l in f if l.startswith("tools:"))
+        return [t.strip() for t in ligne[len("tools:"):].split(",")]
+
+    def test_implementeur_a_websearch_et_webfetch(self):
+        outils = self.outils("implementeur")
+        self.assertIn("WebSearch", outils)
+        self.assertIn("WebFetch", outils)
+
+    def test_reviseur_a_webfetch_sans_ecriture(self):
+        outils = self.outils("reviseur")
+        self.assertIn("WebFetch", outils)
+        for interdit in ("Write", "Edit", "MultiEdit", "NotebookEdit"):
+            self.assertNotIn(interdit, outils)
