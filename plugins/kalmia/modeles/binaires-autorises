@@ -1,0 +1,3 @@
+# Fichiers binaires qu'un implémenteur a le droit d'ajouter (plugin kalmia).
+# Par défaut, le contrôle de fin refuse tout binaire ajouté (captures, archives, sorties générées).
+# Un motif (glob) par ligne ; « # » commence un commentaire. Exemple : docs/images/*.png

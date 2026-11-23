@@ -13,7 +13,10 @@ Contrôles :
   le contrôle bloque et dit où le configurer (échec fermé ; /installer-vagues crée le fichier) ;
 - aucune modification non commitée depuis le départ (fichiers déjà modifiés au
   départ exclus) ;
-- branche courante ni main/master ni tête détachée, et poussée sur origin.
+- branche courante ni main/master ni tête détachée, et poussée sur origin ;
+- aucun fichier binaire ajouté par rapport à origin/main (captures, archives, sorties générées),
+  sauf ceux que le motif d'une ligne de .claude/binaires-autorises (un glob par ligne, `#` pour un
+  commentaire) autorise : une issue qui demande un binaire l'y déclare.
 Arbre contrôlé : racine git du `cwd` de l'événement (l'implémenteur est lancé avec
 `isolation: "worktree"`, son arbre n'est donc pas $CLAUDE_PROJECT_DIR), sinon
 $CLAUDE_PROJECT_DIR, sinon le dossier courant.
@@ -22,6 +25,7 @@ Ignore les autres agents (accepte `implementeur` et `kalmia:implementeur`) et ne
 fait rien sans instantané. Désactivation temporaire : HOOKS_QUALITE_DESACTIVES
 contient `implementeur-stop-check` ou `tous`.
 """
+import fnmatch
 import json
 import os
 import subprocess
@@ -36,6 +40,7 @@ AGENTS = ("implementeur", "kalmia:implementeur")
 MAX_BLOCKS = 3
 PROTECTED = ("main", "master")
 CONFIG = os.path.join(".claude", "verification-implementeur")
+BINAIRES_AUTORISES = os.path.join(".claude", "binaires-autorises")
 TIMEOUT = 540
 MAX_SORTIE = 30
 
@@ -88,6 +93,35 @@ def problemes_git(state, project_dir):
     return problems
 
 
+def probleme_binaires(project_dir):
+    """Fichiers binaires ajoutés depuis origin/main (ou master), hors liste autorisée ; sinon None."""
+    base = next((b for b in ("origin/main", "origin/master")
+                 if git(project_dir, "rev-parse", "--verify", "--quiet", f"refs/remotes/{b}").returncode == 0), None)
+    if base is None:
+        return None
+    proc = git(project_dir, "diff", "--numstat", "--no-renames", "--diff-filter=A", f"{base}...HEAD")
+    if proc.returncode != 0:
+        return None
+    motifs = []
+    try:
+        with open(os.path.join(project_dir, BINAIRES_AUTORISES), encoding="utf-8") as f:
+            motifs = [l.strip() for l in f if l.strip() and not l.lstrip().startswith("#")]
+    except OSError:
+        pass
+    binaires = []
+    for ligne in proc.stdout.splitlines():
+        parts = ligne.split("\t", 2)
+        if len(parts) == 3 and parts[0] == "-" and parts[1] == "-":
+            chemin = parts[2]
+            if not any(fnmatch.fnmatch(chemin, m) for m in motifs):
+                binaires.append(chemin)
+    if not binaires:
+        return None
+    return ("fichiers binaires ajoutés (probablement générés : captures, archives) : " + ", ".join(binaires[:10])
+            + " : retire-les du commit (`git rm --cached`, `.gitignore`) ; si l'issue les demande, "
+            + f"liste leur motif dans {BINAIRES_AUTORISES}.")
+
+
 def probleme_verif(project_dir):
     cmd = commande_verif(project_dir)
     if not cmd:
@@ -120,6 +154,9 @@ def main():
         return 0
 
     problems = problemes_git(state, project_dir)
+    binaires = probleme_binaires(project_dir)
+    if binaires:
+        problems.append(binaires)
     verif = probleme_verif(project_dir)
     if verif:
         problems.append(verif)

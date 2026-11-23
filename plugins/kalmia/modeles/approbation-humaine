@@ -1,0 +1,5 @@
+# Fichiers dont la modification exige l'approbation d'une personne avant fusion (plugin kalmia).
+# Un motif (glob) par ligne ; « # » commence un commentaire. Lu par /kalmia:planifier : les issues dont la
+# section « Fichiers probablement touchés » en contient un reçoivent l'étiquette `approbation-humaine`,
+# sont placées en fin de vague (au plus un tiers du budget) et comptées comme attente humaine, pas comme échec.
+# Source unique : la règle de fusion du projet (CLAUDE.md / AGENTS.md) renvoie ici. Vide = aucune exigence.

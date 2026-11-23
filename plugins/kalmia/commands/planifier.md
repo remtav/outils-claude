@@ -20,18 +20,26 @@ Tu ne codes pas, tu ne fusionnes rien, tu ne lances aucune vague. Tes questions 
 Lis `.claude/journal-vagues.md` tel qu'il est sur `main` (`git fetch -q origin main && git show origin/main:.claude/journal-vagues.md`, sinon le fichier local). Relève :
 - les réglages : `budget: B` et `estimations: …` ;
 - pour chaque vague (dans l'ordre du fichier) : points prévus, points complétés de la ligne `fermée` ou `coupée`, nombre de coupures, `utilisation` si l'utilisateur l'a remplie (`__` = non remplie) ;
-- les lignes `issue` : numéro, taille, résultat, raison.
+- les lignes `issue` : numéro, taille, résultat, raison. **L'état d'une issue est celui de sa dernière ligne** ; les lignes plus anciennes sont de l'historique. La raison commence par une **catégorie** (`humain :`, `dépendance :`, `refusée :`, `CI :`, `coupure :`, `externe :`, `autre :` ; une raison sans catégorie se classe d'après son texte) ;
+- les lignes `suspendue` (panne systémique) et le champ `durée` des lignes `fermée`.
+
+Lis aussi, s'il existe, `.claude/approbation-humaine` : une liste de motifs (un glob par ligne, `#` pour un commentaire) des fichiers dont la modification exige l'approbation d'une personne avant fusion. Sans ce fichier, aucune issue n'est classée « à approbation » (étape 5.0).
 
 Une vague encore non fermée (dernière ligne d'état autre que `fermée`) est peut-être en cours : ne la compte pas dans le bilan et ne replanifie pas ses issues ; signale-la dans le résumé.
 
 ## 2. Ajuster le budget
 
-Sur les **3 dernières vagues** terminées (dernière ligne d'état `fermée`) ou coupées, dans l'ordre du journal :
+Sur les **3 dernières vagues** terminées (dernière ligne d'état `fermée`) ou coupées, dans l'ordre du journal.
+
+**Taux d'achèvement autonome** d'une vague : points des issues `fusionnée` ÷ (points prévus − points des issues dont la dernière ligne a pour catégorie `humain :`, `externe :` ou `dépendance :`). Les attentes humaines, les accès manquants et les dépendances ne sont pas des échecs de la vague : elles ne baissent jamais le budget. Une vague sans dénominateur est ignorée.
 
 - au moins **2 coupées** (une vague coupée puis reprise compte comme coupée) → budget **−2** ;
 - sinon, si **aucune coupée** et que les vagues dont l'utilisation est remplie sont toutes **sous 60 %** (au moins 2 valeurs) → budget **+2** ;
+- sinon, si **aucune coupée ni suspendue** et que les **2 dernières vagues** ont un taux d'achèvement autonome **≥ 90 %** → budget **+2** (l'utilisation n'est pas requise) ;
 - sinon, si une utilisation remplie dépasse **90 %** → budget **−1** ;
 - sinon, inchangé.
+
+Le champ `durée` ne sert pas au calcul : signale dans le résumé une vague plus de deux fois plus longue que la médiane des autres.
 
 Bornes : **4 à 50 points**. Moins de 2 vagues dans le journal : budget inchangé. Une seule règle s'applique par passage : la première qui tient.
 
@@ -39,27 +47,29 @@ Bornes : **4 à 50 points**. Moins de 2 vagues dans le journal : budget inchang�
 
 Le **type** d'une issue : ses étiquettes autres que `taille-*` et `vague-*`, sinon le mot-clé dominant de son titre (ex. « tests e2e », « doc », « hook »). Pour chaque type vu dans les lignes `issue` des 3 dernières vagues :
 
-- au moins 2 issues de ce type `bloquée`, ou `ouverte` pour « refusée par le réviseur », ou restées sans résultat dans une vague coupée → **+1** point pour ce type ;
+- au moins 2 issues de ce type `bloquée` pour une raison `autre :`, `externe :` ou `CI :`, ou `ouverte` pour une raison `refusée :`, ou restées sans résultat dans une vague coupée → **+1** point pour ce type (une attente `humain :` ou `dépendance :` n'ajuste rien) ;
 - un type déjà ajusté à +1 qui a ensuite 3 issues `fusionnée` sans problème → retour à 0.
 
 Écris le résultat dans `estimations:` (ex. `estimations: tests e2e +1 ; hook +1`, ou `aucune`). **Taille effective** d'une issue = sa taille (`taille-1|2|4`) + l'ajustement de son type.
 
 ## 4. Reprendre les issues bloquées ou refusées
 
-Pour chaque issue ouverte dont la dernière ligne `issue` est `bloquée`, ou `ouverte` avec une raison « refusée par le réviseur » :
+Pour chaque issue ouverte dont la dernière ligne `issue` est `bloquée`, ou `ouverte` avec une raison `refusée :` (« refusée par le réviseur ») :
 
 1. Lis l'issue, ses commentaires et, s'il y en a une, la raison donnée sur sa PR (ligne du réviseur ou de l'implementeur), **sans lire le diff**.
 2. **Trop grosse ou trop floue** (plusieurs livrables, critères non vérifiables, taille effective > 4) → **redécoupe** :
    - crée de nouvelles issues avec le modèle enrichi `.github/ISSUE_TEMPLATE/tache.md` (sections Contexte, Fichiers probablement touchés, Critères d'acceptation, Taille, Dépendances, Plan d'implémentation, Tests à écrire d'abord, Commandes de vérification, Hors portée et pièges, Exemples à imiter, Questions ouvertes ; voir `${CLAUDE_PLUGIN_ROOT}/modeles/tache.md`), chacune de taille 1 ou 2, le contexte commençant par `Découpée de #<originale>.` ; remplis **toutes** les sections avec des chemins qui existent (lis le code au besoin) ;
    - étiquette chacune `taille-1` ou `taille-2`, plus `prête` si toutes les sections sont remplies et les « Questions ouvertes » vides, sinon `à-préciser` (crée ces étiquettes si elles manquent ; l'issue sera ensuite complétée par `/kalmia:preparer-issue #N`) ;
    - sur l'originale : un commentaire qui liste les nouvelles issues, et retire son étiquette `vague-*` (elle ne doit plus être reprise par `/kalmia:vague`). Ne la ferme pas : l'utilisateur la fermera.
-3. **Bloquée pour une raison extérieure** : si c'est une **décision** que seul l'utilisateur peut prendre → note la question pour l'étape 6 (une fois répondue, l'issue redevient candidate) ; si c'est autre chose (accès manquant, service externe) → ne la replanifie pas ; signale-la dans le résumé avec la raison.
-4. Sinon (échec ponctuel) → elle redevient candidate à l'étape 5, sans changement.
+3. **Attente humaine** (`humain :` : approbation, décision, entente écrite) : ne la replanifie pas ; elle est reprise **par la personne responsable**, pas par une vague. Liste-la dans le résumé sous « À décider par un humain » avec ce qui est attendu.
+4. **Bloquée pour une raison extérieure** : si c'est une **décision** que seul l'utilisateur peut prendre → note la question pour l'étape 6 (une fois répondue, l'issue redevient candidate) ; si c'est autre chose (accès manquant, service externe) → ne la replanifie pas ; signale-la dans le résumé avec la raison.
+5. Sinon (échec ponctuel) → elle redevient candidate à l'étape 5, sans changement.
 
 ## 5. Classer et former les vagues (plan provisoire)
 
-**Candidates** : issues ouvertes sans étiquette `vague-*` (dont les nouvelles issues de l'étape 4 et celles remises à l'étape 4.4, à qui tu retires leur ancienne étiquette `vague-*`), sauf les issues bloquées pour une raison extérieure (étape 4.3) et les issues de suivi qui ne sont pas des tâches implémentables (ex. plans de travail). Les issues `à-préciser` restent candidates : leurs questions sont traitées à l'étape 6.
+**Candidates** : issues ouvertes sans étiquette `vague-*` (dont les nouvelles issues de l'étape 4 et celles remises à l'étape 4.5, à qui tu retires leur ancienne étiquette `vague-*`), sauf les issues bloquées pour une raison extérieure (étape 4.4) et celles qui attendent un humain (étape 4.3) et les issues de suivi qui ne sont pas des tâches implémentables (ex. plans de travail). Les issues `à-préciser` restent candidates : leurs questions sont traitées à l'étape 6.
 
+0. **Approbation humaine.** Si `.claude/approbation-humaine` existe, compare à ses motifs les chemins de la section « Fichiers probablement touchés » de chaque candidate (correspondance de glob, ou chemin dans un dossier visé). Une issue qui en touche un reçoit l'étiquette `approbation-humaine` (crée-la si elle manque) ; sa PR attendra une personne même si la CI et la révision sont vertes. Ces issues **restent planifiables** (l'implémentation est autonome) mais : place-les en **fin de vague** ; n'en mets pas plus d'**un tiers du budget** dans une même vague ; signale-les dans le résumé (« À approbation »). Elles sont comptées dans les points prévus, mais le taux d'achèvement de l'étape 2 en tient compte comme d'une attente humaine.
 1. **Taille** : lis l'étiquette `taille-*`. Si elle manque, estime-la (section « Taille » de l'issue, sinon ampleur des critères et des fichiers) et pose l'étiquette `taille-1`, `taille-2` ou `taille-4` (à l'étape 7). Au-delà de 4 : redécoupe comme à l'étape 4.2.
 2. **Priorité** : classe les candidates de la plus à la moins prioritaire. Signaux, du plus fort au plus faible :
    1. une priorité explicite : étiquette (`priorité-haute`, `urgent`, `P0`/`P1`…), jalon, ou consigne de l'utilisateur dans l'issue ou ses commentaires ;
@@ -67,7 +77,7 @@ Pour chaque issue ouverte dont la dernière ligne `issue` est `bloquée`, ou `ou
    3. le type : régression ou bug > fonctionnalité > nettoyage, doc, confort ;
    4. à égalité, le numéro d'issue le plus bas d'abord (les issues découpées juste après leur originale).
 3. **Fichiers** : lis la section « Fichiers probablement touchés » de chaque issue (pas de lecture du code à ce stade). Elle sert à **ordonner**, pas à exclure : deux issues qui partagent un fichier (ou dont un chemin est un dossier contenant l'autre) sont **liées**. Dans une vague, les issues liées s'exécutent **l'une après l'autre** (une chaîne) ; les issues non liées s'exécutent **en parallèle**. Section absente ou trop vague pour trancher : l'issue est considérée liée à toutes les autres de sa vague (elle passera seule, après elles) ; signale-le.
-4. **Dépendances** : section « Dépendances » et mentions « Dépend de #n ». Une issue dont une dépendance est encore ouverte va dans une vague **postérieure** à celle de cette dépendance ; si la dépendance n'est dans aucune vague formée ici, l'issue attend (signale-la).
+4. **Dépendances** : section « Dépendances » et mentions « Dépend de #n ». Une dépendance est **remplie** seulement si l'issue est fermée ou sa PR **fusionnée**. Une dépendance dont la PR est ouverte (attente humaine, refusée, CI échouée) **n'est pas remplie** : l'issue dépendante n'entre **dans aucune vague** tant qu'elle ne l'est pas (« En attente : dépend de #n, PR #p non fusionnée »), car `/kalmia:vague` ne lance pas une issue dont la dépendance n'est pas fusionnée. Une issue dont la dépendance est dans une vague **formée ici** va dans une vague **postérieure** à celle-ci, jamais dans la même.
 5. **Remplissage** : numéros de vague à partir de `M + 1`, où `M` est le plus grand `N` vu dans les étiquettes `vague-N` du dépôt et dans le journal. Pour chaque vague, dans l'ordre : parcours les candidates **par priorité** et ajoute une issue seulement si :
    - la somme des tailles effectives reste **≤ budget** ;
    - toutes ses dépendances sont fermées ou dans une vague **précédente** formée ici.
@@ -82,7 +92,7 @@ Rien n'est encore écrit sur GitHub : ce plan est **provisoire** jusqu'à l'éta
 Passe en revue **tout ce qui, dans le plan provisoire, attend une réponse ou une préparation**, pour que les vagues soient 100 % autonomes :
 
 1. **Issues sans `prête` placées dans une vague** : prépare-les toi-même en suivant les sections 1 à 3 de `${CLAUDE_PLUGIN_ROOT}/commands/preparer-issue.md` (lire le code, écrire l'issue au modèle enrichi : Contexte, Fichiers probablement touchés, Critères d'acceptation, Taille, Dépendances, Plan d'implémentation, Tests à écrire d'abord, Commandes de vérification, Hors portée et pièges, Exemples à imiter, Questions ouvertes). Les décisions qui te manquent deviennent des questions.
-2. **Questions ouvertes** des issues `à-préciser` placées dans une vague, et issues bloquées en attente d'une décision (étape 4.3).
+2. **Questions ouvertes** des issues `à-préciser` placées dans une vague, et issues bloquées en attente d'une décision (étape 4.4).
 3. **Incertitudes du plan** : une issue à scinder dont le découpage n'est pas évident, deux issues de même priorité dont l'ordre change le résultat, une section « Fichiers » absente.
 
 **Ne demande que ce que seul l'utilisateur peut trancher.** Ce que le code, le `CLAUDE.md`, le journal ou les commentaires de l'issue permettent de décider : décide-le (une recommandation raisonnable vaut mieux qu'une question) et note le choix dans l'issue.
@@ -120,6 +130,8 @@ Vague N+1 — …
 Redécoupées : #x → #y, #z
 Décisions prises : #i <question> → <réponse>, …
 En attente : #i — <raison>, …
+À approbation : #i (fichiers : …), … (issues qui exigeront une approbation humaine avant fusion)
+À décider par un humain : #i / PR #p — <ce qui est attendu>, … (issues déjà à l'état `humain :` au journal)
 Questions à poser : #i <question>, … (seulement en lecture seule, ou sans réponse possible)
 Prêt : /kalmia:vague N — aucune intervention requise (chaque issue est prête)
 ```

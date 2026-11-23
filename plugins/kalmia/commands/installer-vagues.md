@@ -28,6 +28,8 @@ Détermine deux commandes, dans cet ordre de priorité :
 | `.claude/journal-vagues.md` | `journal-vagues.md` (réglages, format, aucune vague) | — |
 | `.claude/verification-implementeur` | `verification-implementeur` | `{{VERIFICATION}}` → vérification rapide |
 | `.claude/tests-complets` | `tests-complets` | `{{TESTS_COMPLETS}}` → suite complète |
+| `.claude/approbation-humaine` | `approbation-humaine` | — (liste vide : à remplir par le projet) |
+| `.claude/binaires-autorises` | `binaires-autorises` | — |
 
 Pour chacun : s'il existe, « déjà en place » ; sinon, lis le modèle (`${CLAUDE_PLUGIN_ROOT}/modeles/<modèle>`), fais le remplacement, et écris le fichier (crée les dossiers au besoin).
 
@@ -39,7 +41,7 @@ Pour chacun : s'il existe, « déjà en place » ; sinon, lis le modèle (`${CLA
 
 ## 4. Étiquettes
 
-Crée les étiquettes `taille-1`, `taille-2`, `taille-4`, `prête` (issue préparée par `/kalmia:preparer-issue`, lancée par `/kalmia:vague`) et `à-préciser` (issue qui attend une décision) si elles n'existent pas (dépôt `owner/repo` d'après `git remote get-url origin`) : outils MCP GitHub s'il y en a un pour les étiquettes, sinon `gh label create taille-1 --description "1 point" --force` (de même pour 2 et 4 ; `prête` : `--description "Issue préparée, prête pour une vague"`, `à-préciser` : `--description "Décision manquante, voir Questions ouvertes"`) si `gh` est disponible et authentifié. Si aucun accès ne le permet, ne bloque pas : liste-les « à créer » dans le résumé. Dis aussi que les issues déjà ouvertes n'ont pas `prête` : elles passent par `/kalmia:preparer-issue #N` avant `/kalmia:vague`. Les étiquettes `vague-N` sont créées plus tard par `/kalmia:planifier`.
+Crée les étiquettes `taille-1`, `taille-2`, `taille-4`, `approbation-humaine` (issue dont la PR exige l'approbation d'une personne, voir `.claude/approbation-humaine`), `prête` (issue préparée par `/kalmia:preparer-issue`, lancée par `/kalmia:vague`) et `à-préciser` (issue qui attend une décision) si elles n'existent pas (dépôt `owner/repo` d'après `git remote get-url origin`) : outils MCP GitHub s'il y en a un pour les étiquettes, sinon `gh label create taille-1 --description "1 point" --force` (de même pour 2 et 4 ; `approbation-humaine` : `--description "La PR exigera l'approbation d'une personne"`, `prête` : `--description "Issue préparée, prête pour une vague"`, `à-préciser` : `--description "Décision manquante, voir Questions ouvertes"`) si `gh` est disponible et authentifié. Si aucun accès ne le permet, ne bloque pas : liste-les « à créer » dans le résumé. Dis aussi que les issues déjà ouvertes n'ont pas `prête` : elles passent par `/kalmia:preparer-issue #N` avant `/kalmia:vague`. Les étiquettes `vague-N` sont créées plus tard par `/kalmia:planifier`.
 
 ## 5. Résumé (court)
 
@@ -49,7 +51,7 @@ Créés : <fichiers>
 Déjà en place : <fichiers>
 CLAUDE.md : section ajoutée|créé|déjà en place
 Vérification : <commande rapide> ; suite complète : <commande>
-Étiquettes : créées|déjà là|à créer : taille-1, taille-2, taille-4, prête, à-préciser
+Étiquettes : créées|déjà là|à créer : taille-1, taille-2, taille-4, approbation-humaine, prête, à-préciser
 Prochaine étape : relire et commiter ces fichiers, puis /kalmia:preparer-issue #N (issues existantes), /kalmia:planifier, puis /kalmia:vague 1
 ```
 
