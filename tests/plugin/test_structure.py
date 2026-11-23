@@ -201,6 +201,13 @@ class PreparerIssue(unittest.TestCase):
         self.assertIn("Commandes de vérification", text)
         self.assertRegex(frontmatter(os.path.join(PLUGIN, "agents", "implementeur.md")), r"(?m)^model: sonnet$")
 
+    def test_implementeur_recopie_la_definition_de_termine(self):
+        text = read(os.path.join(PLUGIN, "agents", "implementeur.md"))
+        for mot in ("Définition de terminé commune", "Critères d'acceptation", "Vérifications lancées",
+                    "pull_request_read", "update_pull_request", "git status", "git fetch origin main"):
+            self.assertIn(mot, text)
+        self.assertRegex(text, r"[Jj]amais.*CI verte")
+
 
 class AucuneDonneeDeProjet(unittest.TestCase):
     """Rien de propre à un projet (remtav/template ou autre) dans le plugin."""
