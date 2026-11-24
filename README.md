@@ -115,6 +115,8 @@ Sans commande de vérification ni suite complète configurée, les gardes refuse
 
 Sans vague coupée, la commande répond `Rien à reprendre` et s'arrête aussitôt, presque sans coût.
 
+Pendant une vague, l'orchestrateur attend la CI sans s'arrêter : il programme son propre réveil (commande de fond, sinon réveil planifié ; section « Attendre sans s'arrêter » de `commands/vague.md`). À chaque réveil, il vérifie d'abord dans le journal qu'aucune reprise planifiée n'a pris la vague entre-temps ; sinon il s'arrête sans rien écrire.
+
 ### Mises à jour
 
 **Choix : pas de `version` dans `plugin.json`.** Claude Code prend alors le SHA du commit comme version : chaque commit poussé sur `main` de ce dépôt est une nouvelle version, sans rien incrémenter. Avec une `version` figée, les projets resteraient sur elle tant qu'on ne l'incrémente pas.

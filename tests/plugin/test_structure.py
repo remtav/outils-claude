@@ -209,6 +209,33 @@ class PreparerIssue(unittest.TestCase):
         self.assertRegex(text, r"[Jj]amais.*CI verte")
 
 
+class ReveilVague(unittest.TestCase):
+    """Issue 15 : l'orchestrateur ne finit pas son tour avec une CI en attente sans réveil programmé."""
+
+    def setUp(self):
+        self.text = read(os.path.join(PLUGIN, "commands", "vague.md"))
+
+    def test_section_reveil(self):
+        self.assertIn("## Attendre sans s'arrêter (réveil)", self.text)
+        self.assertIn("ne termines pas ton tour sans avoir programmé ton réveil", self.text)
+        self.assertIn("run_in_background", self.text)
+        self.assertIn("gh pr checks", self.text)
+
+    def test_etapes_3_et_4_renvoient_au_reveil(self):
+        etape3 = self.text.split("## 3.", 1)[1].split("\n## 4.", 1)[0]
+        etape4 = self.text.split("## 4.", 1)[1].split("\n## ", 1)[0]
+        self.assertIn("réveil", etape3)
+        self.assertIn("réveil", etape4)
+
+    def test_plafond_de_30_minutes_au_journal(self):
+        self.assertIn("CI : en attente après 30 min", self.text)
+
+    def test_relit_toutes_les_pr_et_respecte_la_reprise(self):
+        reveil = self.text.split("## Attendre sans s'arrêter", 1)[1].split("\n## ", 1)[0]
+        self.assertIn("toutes les PR ouvertes de la vague", reveil)
+        self.assertIn("reprise par une autre session", reveil)
+
+
 class AucuneDonneeDeProjet(unittest.TestCase):
     """Rien de propre à un projet (remtav/template ou autre) dans le plugin."""
 

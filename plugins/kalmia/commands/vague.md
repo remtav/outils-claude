@@ -76,7 +76,7 @@ Issue #<numéro>. Réponds en une seule ligne au format de ta définition.
 
 Pour chaque PR (nouvelle ou déjà ouverte) :
 
-1. **CI.** Lis l'état des vérifications du dernier commit (`mcp__github__pull_request_read` méthodes `get_check_runs` et `get_status`, ou `gh pr checks <n>`). Tant qu'une vérification est en attente : attends et relis, **espacé** (environ toutes les 2 à 5 minutes ; jamais en boucle serrée), au plus 30 minutes, puis considère-la « en attente » et passe à la suite.
+1. **CI.** Lis l'état des vérifications du dernier commit (`mcp__github__pull_request_read` méthodes `get_check_runs` et `get_status`, ou `gh pr checks <n>`). Tant qu'une vérification est en attente : **programme ton réveil** (section « Attendre sans s'arrêter » plus bas) puis relis, **espacé** (environ toutes les 2 à 5 minutes ; jamais en boucle serrée), au plus **30 minutes** pour cette PR. Au-delà, considère-la « en attente » : écris aussitôt au journal `issue #I | taille T | ouverte | PR #n | CI : en attente après 30 min`, et passe à la suite (la PR sera relue à chaque réveil suivant et fusionnée si sa CI devient verte).
    - **réussie** : toutes les vérifications terminées et vertes ;
    - **échouée** : au moins une rouge ou annulée → la PR reste ouverte ;
    - **absente** : aucune vérification configurée pour cette PR (cas fréquent : le workflow ne se déclenche que sur certains chemins). Note-le. **Règle par défaut : une PR à CI absente n'est pas fusionnée**, même si l'implémenteur rapporte ses tests locaux réussis ; elle reste ouverte avec la raison « CI absente ». Cette commande ne contient aucune règle qui autorise la fusion sans CI.
@@ -96,7 +96,29 @@ Seule cette session principale fusionne : le garde `garde-agents-vague.py` du pl
 
 ## 4. Après chaque fusion
 
-Les autres PR ouvertes de la vague peuvent maintenant être en conflit avec `main`. Pour chacune : tente une mise à jour de la branche (`mcp__github__update_pull_request_branch`, ou `gh pr update-branch <n>`). Si la mise à jour échoue, laisse la PR ouverte et signale-la « conflit après fusion ». Une PR mise à jour a un nouveau commit : refais l'étape 3 pour elle (CI puis nouvelle révision).
+Les autres PR ouvertes de la vague peuvent maintenant être en conflit avec `main`. Pour chacune : tente une mise à jour de la branche (`mcp__github__update_pull_request_branch`, ou `gh pr update-branch <n>`). Si la mise à jour échoue, laisse la PR ouverte et signale-la « conflit après fusion ». Une PR mise à jour a un nouveau commit : refais l'étape 3 pour elle (CI puis nouvelle révision) ; sa nouvelle CI s'attend de la même façon, avec réveil programmé.
+
+## Attendre sans s'arrêter (réveil)
+
+Quand plus aucun sous-agent ne tourne, **rien ne te réveille** : si tu termines ton tour en disant « je revérifie plus tard », la vague reste arrêtée jusqu'à ce que l'utilisateur écrive. Un `sleep` en avant-plan est d'ailleurs bloqué.
+
+**Règle.** Tant qu'une PR de la vague a une CI en attente (étape 3 ou 4), ou qu'une chaîne attend la fusion de sa précédente, tu **ne termines pas ton tour sans avoir programmé ton réveil**. Terminer son tour sans réveil n'est permis que si la vague est **fermée** (étape 5), ou **suspendue** avec sa raison au journal. Un sous-agent encore en cours compte comme réveil (sa réponse te réveille) : pas besoin d'en programmer un autre.
+
+**Mécanisme**, dans cet ordre de préférence :
+1. **Commande de fond qui surveille la CI** : `Bash` avec `run_in_background: true` et `timeout: 1800000` (30 min). La fin de la commande te réveille. Si `gh` fonctionne (`gh auth status`) :
+   ```
+   for i in $(seq 20); do for p in <n1> <n2>; do gh pr checks "$p" >/dev/null 2>&1; [ $? -eq 8 ] || exit 0; done; sleep 90; done
+   ```
+   (`<n1> <n2>` : les PR dont la CI est en attente. `gh pr checks` sort avec le code 8 tant qu'une vérification est en attente : la commande se termine dès qu'une des PR n'a plus rien en attente, ou après 30 min.)
+2. **Sinon, minuterie de fond** (sans `gh`, accès GitHub par MCP seulement) : `Bash` avec `run_in_background: true`, commande `sleep 180` (3 min). À sa fin, relis l'état par MCP, puis reprogramme-la si l'attente continue. L'outil `Monitor` (boucle `until`) convient aussi s'il est disponible.
+3. **En dernier recours**, si les commandes de fond sont indisponibles : un réveil unique programmé dans **cette** session dans 3 à 5 minutes (`ScheduleWakeup`, `CronCreate` ou `send_later`, selon ce qui existe), à reprogrammer à chaque passage, et à supprimer s'il n'a plus d'objet.
+
+Préfère 1 ou 2 : une commande de fond meurt avec la session, alors qu'un réveil programmé peut arriver après une coupure (voir « À chaque réveil »).
+
+**À chaque réveil** (fin d'une commande de fond, réveil programmé, **ou réponse d'un sous-agent implémenteur ou réviseur**) :
+1. **Une autre session a-t-elle repris la vague ?** Relis le journal sur `main` (comme à l'étape 0). Si une ligne `coupée` ou `reprise` de la vague `N` a été écrite **après** ta propre ligne `ouverte` ou `reprise`, la vague a été reprise ailleurs (cas de la limite d'utilisation atteinte puis de la reprise planifiée) : **arrête-toi sans rien écrire** ni fusionner, et réponds `Vague N reprise par une autre session : arrêt`. Les réponses de sous-agents en cours dans cette session ne déclenchent pas cette relecture ; les réveils de fond et programmés, si.
+2. **Relis l'état de toutes les PR ouvertes de la vague**, pas seulement celle qui t'a réveillé : CI, verdict du réviseur, SHA de tête. Fusionne (étape 3, point 3) chacune dont la CI est devenue verte entre-temps et qui a son approbation sur ce SHA ; lance la révision de celles dont la CI vient de se terminer sans révision ; débloque la suite de leurs chaînes.
+3. S'il reste de l'attente, reprogramme un réveil avant de finir ton tour.
 
 ## 5. Résumé final (court)
 
